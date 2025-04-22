@@ -223,8 +223,12 @@ class MaskedAutoencoderViT(nn.Module):
         # predictor projection
         x = self.decoder_pred(x)
 
-        # remove cls token
-        x = x[:, 1:, :]
+        if self.is_distill_token:
+            # remove cls and distill token
+            x = x[:, 1:-1, :]
+        else:
+            # remove cls token
+            x = x[:, 1:, :]
 
         return x
 
@@ -279,7 +283,7 @@ def mae_vit_huge_patch14_dec512d8b(**kwargs):
 def mae_vit_tiny_patch4_dec512d8b(**kwargs):
     model = MaskedAutoencoderViT(
         # TODO: 这里embed_dim之后调调
-        img_size=32, patch_size=14, embed_dim=192, depth=12, num_heads=3,
+        img_size=32, patch_size=4, embed_dim=192, depth=12, num_heads=3,
         decoder_embed_dim=512, decoder_depth=8, decoder_num_heads=16,
         mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
     return model
@@ -287,7 +291,7 @@ def mae_vit_tiny_patch4_dec512d8b(**kwargs):
 def mae_deit_tiny_patch4_dec512d8b(**kwargs):
     model = MaskedAutoencoderViT(
         # TODO: 这里embed_dim之后调调
-        img_size=32, patch_size=14, embed_dim=192, depth=12, num_heads=3,
+        img_size=32, patch_size=4, embed_dim=192, depth=12, num_heads=3,
         decoder_embed_dim=512, decoder_depth=8, decoder_num_heads=16,
         mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6), is_distill_token=True, **kwargs)
     return model
