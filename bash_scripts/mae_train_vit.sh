@@ -31,5 +31,4 @@ python main_pretrain.py \
     --input_size ${INPUT_SIZE} \
     --mask_ratio ${MASK_RATIO} \
     --norm_pix_loss \
-    --log_dir ${LOG_DIR}\
-    --resume ./ckpts/original_mae/pretrained/checkpoint-20.pth
+    --log_dir ${LOG_DIR}
