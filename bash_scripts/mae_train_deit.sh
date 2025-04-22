@@ -3,7 +3,7 @@ export OMP_NUM_THREADS=4
 
 NUM_GPUS=2
 MODEL="mae_deit_tiny_patch4"
-DATA_PATH="./datasets/cifar10_dataset"
+DATA_PATH="./dataset/cifar10_dataset"
 OUTPUT_DIR="./ckpts/original_mae/pretrained"
 BATCH_SIZE=64
 ACCUM=2
