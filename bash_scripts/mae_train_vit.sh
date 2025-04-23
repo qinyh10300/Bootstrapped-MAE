@@ -1,10 +1,11 @@
 #!/bin/bash
 export OMP_NUM_THREADS=4
 
+NAME="mae_train_vit"
 NUM_GPUS=2
 MODEL="mae_vit_tiny_patch4"
 DATA_PATH="./dataset/cifar10_dataset"
-OUTPUT_DIR="./ckpts/mae_vit_tiny/pretrained"
+OUTPUT_DIR="./ckpts/${NAME}/pretrained"
 BATCH_SIZE=64
 ACCUM=2
 EPOCHS=200
@@ -17,7 +18,7 @@ MASK_RATIO=0.75
 CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
 
 # 动态生成日志目录
-LOG_DIR="./logs/mae_vit_tiny/tb_${CURRENT_DATETIME}"
+LOG_DIR="./logs/${NAME}/tb_${NAME}_${CURRENT_DATETIME}"
 
 python main_pretrain.py \
     --model ${MODEL} \
@@ -31,4 +32,5 @@ python main_pretrain.py \
     --input_size ${INPUT_SIZE} \
     --mask_ratio ${MASK_RATIO} \
     --norm_pix_loss \
-    --log_dir ${LOG_DIR}
+    --log_dir ${LOG_DIR}\
+    --ckpt_name ${NAME}
