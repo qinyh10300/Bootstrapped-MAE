@@ -35,20 +35,24 @@ while true; do
     esac
 done
 
-echo "Using config file: $CONFIG_FILE"
+echo -e "\033[1;33mUsing config file: $CONFIG_FILE\033[0m"
 
 # 初始化变量，使用 YAML 文件中的默认值
-num_gpus=$(yq e '.NUM_GPUS' $CONFIG_FILE)
-model=$(yq e '.MODEL' $CONFIG_FILE)
-data_path=$(yq e '.DATA_PATH' $CONFIG_FILE)
-output_dir=$(yq e '.OUTPUT_DIR' $CONFIG_FILE)
-batch_size=$(yq e '.BATCH_SIZE' $CONFIG_FILE)
-accum=$(yq e '.ACCUM' $CONFIG_FILE)
-epochs=$(yq e '.EPOCHS' $CONFIG_FILE)
-warmup_epochs=$(yq e '.WARMUP_EPOCHS' $CONFIG_FILE)
-base_lr=$(yq e '.BASE_LR' $CONFIG_FILE)
-input_size=$(yq e '.INPUT_SIZE' $CONFIG_FILE)
-mask_ratio=$(yq e '.MASK_RATIO' $CONFIG_FILE)
+NUM_GPUS=$(yq -r '.NUM_GPUS' $CONFIG_FILE)
+MODEL=$(yq -r '.MODEL' $CONFIG_FILE)
+NAME=$(yq -r '.NAME' $CONFIG_FILE)
+
+echo -e "\033[1;33mModel: $NAME\033[0m"
+
+DATA_PATH=$(yq -r '.DATA_PATH' $CONFIG_FILE)
+OUTPUT_DIR=$(yq -r '.OUTPUT_DIR' $CONFIG_FILE)
+BATCH_SIZE=$(yq -r '.BATCH_SIZE' $CONFIG_FILE)
+ACCUM=$(yq -r '.ACCUM' $CONFIG_FILE)
+EPOCHS=$(yq -r '.EPOCHS' $CONFIG_FILE)
+WARMUP_EPOCHS=$(yq -r '.WARMUP_EPOCHS' $CONFIG_FILE)
+BASE_LR=$(yq -r '.BASE_LR' $CONFIG_FILE)
+INPUT_SIZE=$(yq -r '.INPUT_SIZE' $CONFIG_FILE)
+MASK_RATIO=$(yq -r '.MASK_RATIO' $CONFIG_FILE)
 
 # 获取当前日期和时间
 CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")

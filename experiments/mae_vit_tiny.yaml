@@ -1,7 +1,8 @@
 NUM_GPUS: 2
-MODEL: "mae_vit_tiny_patch4"
-DATA_PATH: "./datasets/cifar10_dataset"
-OUTPUT_DIR: "./ckpts/original_mae/pretrained"
+NAME: mae_train_vit
+MODEL: mae_vit_tiny_patch4
+DATA_PATH: ./dataset/cifar10_dataset
+OUTPUT_DIR: ./ckpts/original_mae/pretrained
 BATCH_SIZE: 64
 ACCUM: 2
 EPOCHS: 200
@@ -9,4 +10,4 @@ WARMUP_EPOCHS: 10
 BASE_LR: 1.5e-4
 INPUT_SIZE: 32
 MASK_RATIO: 0.75
-RESUME: "./ckpts/original_mae/pretrained/checkpoint-20.pth"
+RESUME: ./ckpts/original_mae/pretrained/checkpoint-20.pth
