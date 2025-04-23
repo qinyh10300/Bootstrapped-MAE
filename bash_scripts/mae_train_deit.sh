@@ -4,7 +4,7 @@ export OMP_NUM_THREADS=4
 NUM_GPUS=2
 MODEL="mae_deit_tiny_patch4"
 DATA_PATH="./dataset/cifar10_dataset"
-OUTPUT_DIR="./ckpts/original_mae/pretrained"
+OUTPUT_DIR="./ckpts/mae_deit_tiny/pretrained"
 BATCH_SIZE=64
 ACCUM=2
 EPOCHS=200
@@ -17,7 +17,7 @@ MASK_RATIO=0.75
 CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
 
 # 动态生成日志目录
-LOG_DIR="./logs/original_mae/tb_${CURRENT_DATETIME}"
+LOG_DIR="./logs/mae_deit_tiny/tb_${CURRENT_DATETIME}"
 
 python main_pretrain.py \
     --model ${MODEL} \
