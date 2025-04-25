@@ -25,7 +25,8 @@ class MaskedAutoencoderViT(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=3,
                  embed_dim=1024, depth=24, num_heads=16,
                  decoder_embed_dim=512, decoder_depth=8, decoder_num_heads=16,
-                 mlp_ratio=4., norm_layer=nn.LayerNorm, norm_pix_loss=False, is_distill_token=False):
+                 mlp_ratio=4., norm_layer=nn.LayerNorm, norm_pix_loss=False, 
+                 is_distill_token=False, is_bootstrapping=False, last_model=None, bootstrap_method='last_layer'):
         super().__init__()
 
         # --------------------------------------------------------------------------
@@ -33,6 +34,13 @@ class MaskedAutoencoderViT(nn.Module):
         self.patch_embed = PatchEmbed(img_size, patch_size, in_chans, embed_dim)
         num_patches = self.patch_embed.num_patches
         self.num_patches = num_patches
+
+        if is_bootstrapping:
+            assert bootstrap_method in ['last_layer', 'all_layers'], 'bootstrap_method must be one of [last_layer, all_layers]'
+
+        self.is_bootstrapping = is_bootstrapping
+        self.last_model = last_model
+        self.bootstrap_method = bootstrap_method
 
         self.is_distill_token = is_distill_token
         if is_distill_token:
@@ -201,6 +209,7 @@ class MaskedAutoencoderViT(nn.Module):
 
         if self.is_distill_token:
             # append mask tokens to sequence
+            # 相当于没mask的部分直接使用原图，最后计算loss的时候只计算mask的部分
             mask_tokens = self.mask_token.repeat(x.shape[0], ids_restore.shape[1] + 2 - x.shape[1], 1) # +2 for cls and distill token
             x_ = torch.cat([x[:, 1:-1, :], mask_tokens], dim=1)  # no cls token
             x_ = torch.gather(x_, dim=1, index=ids_restore.unsqueeze(-1).repeat(1, 1, x.shape[2]))  # unshuffle
@@ -238,17 +247,36 @@ class MaskedAutoencoderViT(nn.Module):
         pred: [N, L, p*p*3]
         mask: [N, L], 0 is keep, 1 is remove, 
         """
-        target = self.patchify(imgs)
-        if self.norm_pix_loss:
-            mean = target.mean(dim=-1, keepdim=True)
-            var = target.var(dim=-1, keepdim=True)
-            target = (target - mean) / (var + 1.e-6)**.5
+        if self.is_bootstrapping and self.last_model is not None:
+            with torch.no_grad():
+                self.target_model.eval()
+                if self.bootstrap_method == 'last_layer':
+                    target, _, _ = self.last_model.forward_encoder(imgs, mask_ratio=0.0)
+                else:
+                    raise NotImplementedError('bootstrap_method must be one of [last_layer, all_layers]')
+                
+                if self.is_distill_token:
+                    target = nn.functional.normalize(target[:, 1:-1, :], dim=-1)
+                else:
+                    target = nn.functional.normalize(target[:, 1:, :], dim=-1)
 
-        loss = (pred - target) ** 2
-        loss = loss.mean(dim=-1)  # [N, L], mean loss per patch
+            loss = (pred - target) ** 2
+            loss = loss.mean(dim=-1)  # [N, L], mean loss per patch
 
-        loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
-        return loss
+            loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
+            return loss
+        else:
+            target = self.patchify(imgs)
+            if self.norm_pix_loss:
+                mean = target.mean(dim=-1, keepdim=True)
+                var = target.var(dim=-1, keepdim=True)
+                target = (target - mean) / (var + 1.e-6)**.5
+
+            loss = (pred - target) ** 2
+            loss = loss.mean(dim=-1)  # [N, L], mean loss per patch
+
+            loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
+            return loss
 
     def forward(self, imgs, mask_ratio=0.75):
         latent, mask, ids_restore = self.forward_encoder(imgs, mask_ratio)

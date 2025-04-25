@@ -34,6 +34,8 @@ import models_mae
 
 from engine_pretrain import train_one_epoch
 
+import copy
+from util.ema import EMA
 
 def get_args_parser():
     parser = argparse.ArgumentParser('MAE pre-training', add_help=False)
@@ -102,6 +104,18 @@ def get_args_parser():
     parser.add_argument('--dist_on_itp', action='store_true')
     parser.add_argument('--dist_url', default='env://',
                         help='url used to set up distributed training')
+    
+    # bootstrapping parameters
+    parser.add_argument('--is_bootstrapping', action='store_true')
+    parser.set_defaults(is_bootstrapping=False)
+    parser.add_argument('--bootstrap_steps', default=5, type=int)
+    parser.add_argument('--bootstrap_method', default='last_layer', type=str)
+
+    # ema parameters
+    parser.add_argument('--use_ema', action='store_true')
+    parser.set_defaults(use_ema=False)
+    parser.add_argument('--ema_decay', default=0.99, type=float)
+    # parser.add_argument('--ema_lr_decay', default=0.1, type=float)
 
     return parser
 
@@ -154,10 +168,22 @@ def main(args):
         drop_last=True,
     )
     
-    # define the model
-    model = models_mae.__dict__[args.model](norm_pix_loss=args.norm_pix_loss)
+    # TODO: define the model
+    if args.is_bootstrapping:
+        model = models_mae.__dict__[args.model](norm_pix_loss=args.norm_pix_loss)
+    else:
+        model = models_mae.__dict__[args.model](
+            norm_pix_loss=args.norm_pix_loss,
+            is_bootstrapping=args.is_bootstrapping,
+            bootstrap_method=args.bootstrap_method,
+            )
 
     model.to(device)
+
+    if args.use_ema:
+        assert args.ema_decay < 1.0, "EMA decay should be less than 1.0"
+        ema_model = EMA(model, args.ema_decay)
+        ema_model.register()
 
     model_without_ddp = model
     print("Model = %s" % str(model_without_ddp))
@@ -184,35 +210,101 @@ def main(args):
     loss_scaler = NativeScaler()
 
     misc.load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
+    
+    if args.is_bootstrapping:
+        assert args.epochs % args.bootstrap_steps == 0, "Total epochs should be divisible by bootstrap steps."
+        epochs_per_bootstrap = args.epochs // args.bootstrap_steps
+        print(f"Start training Bootstrapped MAE for {args.epochs} epochs in total, \
+              {epochs_per_bootstrap} epochs per bootstrap step")
+        start_time = time.time()
 
-    print(f"Start training for {args.epochs} epochs")
-    start_time = time.time()
-    for epoch in range(args.start_epoch, args.epochs):
-        if args.distributed:
-            data_loader_train.sampler.set_epoch(epoch)
-        train_stats = train_one_epoch(
-            model, data_loader_train,
-            optimizer, device, epoch, loss_scaler,
-            log_writer=log_writer,
-            args=args
-        )
-        if args.output_dir and (epoch % 20 == 0 or epoch + 1 == args.epochs):
-            misc.save_model(
-                args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=args.model)
+        for bootstrap_iter in range(args.bootstrap_iterations):
+            print(f"Starting bootstrap iteration {bootstrap_iter + 1}/{args.bootstrap_iterations}")
 
-        log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
-                        'epoch': epoch,}
+            # TODO: 调整每个bootstrap step的学习率（EMA）。后话，调整学习率部分
+            # # Update target model for bootstrapping
+            # if bootstrap_iter > 0:
+            #     model.load_state_dict({'module.' + k: v for k, v in ema_model.state_dict().items()}, strict=False)
+            #     model.target_model = ema_model
+            #     for param_group in optimizer.param_groups:
+            #         param_group['lr'] = args.lr * (args.ema_lr_decay ** bootstrap_iter)
 
-        if args.output_dir and misc.is_main_process():
-            if log_writer is not None:
-                log_writer.flush()
-            with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
-                f.write(json.dumps(log_stats) + "\n")
+            # Train for epochs_per_bootstrap epochs
+            for epoch in range(epochs_per_bootstrap):
+                if args.distributed:
+                    data_loader_train.sampler.set_epoch(epoch)
+                train_stats = train_one_epoch(
+                    model, data_loader_train,
+                    optimizer, device, epoch, loss_scaler,
+                    log_writer=log_writer,
+                    args=args
+                )
+                if args.use_ema:
+                    # TODO
+                    ema_model.update()
 
-    total_time = time.time() - start_time
-    total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-    print('Training time {}'.format(total_time_str))
+                if args.output_dir and (epoch % 20 == 0 or epoch + 1 == epochs_per_bootstrap):
+                    misc.save_model(
+                        args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                        loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae_{bootstrap_iter + 1}")
+                    
+                    if args.use_ema:
+                        ema_model.apply_shadow()
+                        misc.save_model(
+                            args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                            loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae_{bootstrap_iter + 1}_EMA")
+                        ema_model.restore()
+
+                log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
+                            'epoch': epoch,}
+
+                if args.output_dir and misc.is_main_process():
+                    if log_writer is not None:
+                        log_writer.flush()
+                    with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
+                        f.write(json.dumps(log_stats) + "\n")
+
+            # Update target model for bootstrapping
+            last_model = copy.deepcopy(model)
+            model.last_model = last_model
+
+            total_time = time.time() - start_time
+            total_time_str = str(datetime.timedelta(seconds=int(total_time)))
+            print(f'Finish Training MAE-{bootstrap_iter + 1}. Training time {total_time_str}')
+
+        total_time = time.time() - start_time
+        total_time_str = str(datetime.timedelta(seconds=int(total_time)))
+        print('Bootstrapped MAE training time {}'.format(total_time_str))
+    else:
+        print(f"Start training original MAE for {args.epochs} epochs")
+        start_time = time.time()
+
+        for epoch in range(args.start_epoch, args.epochs):
+            if args.distributed:
+                data_loader_train.sampler.set_epoch(epoch)
+            train_stats = train_one_epoch(
+                model, data_loader_train,
+                optimizer, device, epoch, loss_scaler,
+                log_writer=log_writer,
+                args=args
+            )
+            if args.output_dir and (epoch % 20 == 0 or epoch + 1 == args.epochs):
+                misc.save_model(
+                    args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                    loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=args.model)
+
+            log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
+                            'epoch': epoch,}
+
+            if args.output_dir and misc.is_main_process():
+                if log_writer is not None:
+                    log_writer.flush()
+                with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
+                    f.write(json.dumps(log_stats) + "\n")
+
+        total_time = time.time() - start_time
+        total_time_str = str(datetime.timedelta(seconds=int(total_time)))
+        print('Original MAE training time {}'.format(total_time_str))
 
 
 if __name__ == '__main__':
