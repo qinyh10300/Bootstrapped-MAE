@@ -218,8 +218,8 @@ def main(args):
               {epochs_per_bootstrap} epochs per bootstrap step")
         start_time = time.time()
 
-        for bootstrap_iter in range(args.bootstrap_iterations):
-            print(f"Starting bootstrap iteration {bootstrap_iter + 1}/{args.bootstrap_iterations}")
+        for bootstrap_iter in range(args.bootstrap_steps):
+            print(f"Starting bootstrap iteration {bootstrap_iter + 1}/{args.bootstrap_steps}")
 
             # TODO: 调整每个bootstrap step的学习率（EMA）。后话，调整学习率部分
             # # Update target model for bootstrapping
