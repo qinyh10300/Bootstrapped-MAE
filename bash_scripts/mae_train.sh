@@ -1,10 +1,12 @@
 #!/bin/bash
 export OMP_NUM_THREADS=4
 
-NAME="mae_train_deit"
+NAME="mae_deit_pretrain"
+CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
+LOG_DIR="./logs/${NAME}/tb_${NAME}_${CURRENT_DATETIME}"
 MODEL="mae_deit_tiny_patch4"
 DATA_PATH="./dataset/cifar10_dataset"
-OUTPUT_DIR="./ckpts/mae/pretrained"
+OUTPUT_DIR="./ckpts/${NAME}/${CURRENT_DATETIME}"
 BATCH_SIZE=256
 ACCUM=2
 EPOCHS=200
@@ -13,13 +15,8 @@ BASE_LR=1.5e-4
 INPUT_SIZE=32
 MASK_RATIO=0.75
 
-# 获取当前日期和时间
-CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
-
-# 动态生成日志目录
-LOG_DIR="./logs/${NAME}/tb_${NAME}_${CURRENT_DATETIME}"
-
 python main_pretrain.py \
+    --name ${NAME} \
     --model ${MODEL} \
     --data_path ${DATA_PATH} \
     --output_dir ${OUTPUT_DIR} \

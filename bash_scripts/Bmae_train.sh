@@ -1,10 +1,12 @@
 #!/bin/bash
 export OMP_NUM_THREADS=4
 
-NAME="Bmae_train_deit"
+NAME="Bmae_deit_pretrain"
+CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
+LOG_DIR="./logs/${NAME}/tb_${NAME}_${CURRENT_DATETIME}"
 MODEL="mae_deit_tiny_patch4"
 DATA_PATH="./dataset/cifar10_dataset"
-OUTPUT_DIR="./ckpts/Bmae/pretrained"
+OUTPUT_DIR="./ckpts/${NAME}/${CURRENT_DATETIME}"
 BATCH_SIZE=256  # modfiy to fit your GPU memory
 ACCUM=2
 EPOCHS=200
@@ -16,13 +18,8 @@ BOOTSTRAP_STEPS=5
 BOOTSTRAP_METHOD='last_layer'
 EMA_DECAY=0.99
 
-# 获取当前日期和时间
-CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
-
-# 动态生成日志目录
-LOG_DIR="./logs/${NAME}/tb_${NAME}_${CURRENT_DATETIME}"
-
 python main_pretrain.py \
+    --name ${NAME} \
     --model ${MODEL} \
     --data_path ${DATA_PATH} \
     --output_dir ${OUTPUT_DIR} \

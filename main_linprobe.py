@@ -48,6 +48,9 @@ def get_args_parser():
                         help='Accumulate gradient iterations (for increasing the effective batch size under memory constraints)')
 
     # Model parameters
+    parser.add_argument('--name', required=True,
+                        help='Name of the checkpoint')
+    
     parser.add_argument('--model', default='vit_large_patch16', type=str, metavar='MODEL',
                         help='Name of model to train')
     
@@ -290,7 +293,7 @@ def main(args):
         if args.output_dir:
             misc.save_model(
                 args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae_linprobe_{args.current_datetime}")
+                loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"{args.name}")
 
         test_stats = evaluate(data_loader_val, model, device)
         print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")

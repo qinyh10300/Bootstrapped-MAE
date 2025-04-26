@@ -46,6 +46,9 @@ def get_args_parser():
                         help='Accumulate gradient iterations (for increasing the effective batch size under memory constraints)')
 
     # Model parameters
+    parser.add_argument('--name', required=True,
+                        help='Name of the checkpoint')
+    
     parser.add_argument('--model', default='mae_vit_large_patch16', type=str, metavar='MODEL',
                         help='Name of model to train')
 
@@ -250,13 +253,13 @@ def main(args):
                 if args.output_dir and (epoch % 20 == 0 or epoch + 1 == epochs_per_bootstrap):
                     misc.save_model(
                         args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                        loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1}_{args.current_datetime}")
+                        loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1}")
                     
                     if args.use_ema:
                         ema_model.apply_shadow()
                         misc.save_model(
                             args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                            loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1}_EMA_{args.current_datetime}")
+                            loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1} (EMA)")
                         ema_model.restore()
 
                 log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
@@ -294,7 +297,7 @@ def main(args):
             if args.output_dir and (epoch % 20 == 0 or epoch + 1 == args.epochs):
                 misc.save_model(
                     args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                    loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"mae_{args.current_datetime}")
+                    loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"{args.name}")
 
             log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                             'epoch': epoch,}

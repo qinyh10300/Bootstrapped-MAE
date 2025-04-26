@@ -2,9 +2,11 @@
 export OMP_NUM_THREADS=4
 
 NAME="mae_deit_finetune"
+CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
+LOG_DIR="./logs/${NAME}/tb_${NAME}_${CURRENT_DATETIME}"
 MODEL="deit_tiny_patch4"
 DATA_PATH="./dataset/cifar10_dataset"
-OUTPUT_DIR="./ckpts/mae/finetune"
+OUTPUT_DIR="./ckpts/${NAME}/${CURRENT_DATETIME}"
 BATCH_SIZE=256
 EPOCHS=100
 WARMUP_EPOCHS=10
@@ -14,13 +16,8 @@ WEIGHT_DECAY=0
 DROP_PATH=0.05
 CKPT="ckpts/mae_2025-04-26_16-56-35-199.pth"
 
-# 获取当前日期和时间
-CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
-
-# 动态生成日志目录
-LOG_DIR="./logs/${NAME}/tb_${NAME}_${CURRENT_DATETIME}"
-
 python main_finetune.py \
+    --name ${NAME} \
     --model ${MODEL} \
     --data_path ${DATA_PATH} \
     --output_dir ${OUTPUT_DIR} \
