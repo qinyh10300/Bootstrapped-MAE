@@ -1,7 +1,8 @@
 #!/bin/bash
 export OMP_NUM_THREADS=4
 
-MODEL="vit_tiny_patch4"
+NAME="Bmae_deit_finetune"
+MODEL="deit_tiny_patch4"
 DATA_PATH="./dataset/cifar10_dataset"
 OUTPUT_DIR="./ckpts/mae_bootstrap/finetune_final"
 BATCH_SIZE=64
@@ -11,6 +12,7 @@ BASE_LR=1e-3
 INPUT_SIZE=32
 WEIGHT_DECAY=0
 DROP_PATH=0.05
+CKPT="./ckpts/Bmae_train_deit/pretrained/Bmae-5_EMA-39.pth"
 
 # 获取当前日期和时间
 CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
@@ -29,9 +31,10 @@ python main_finetune.py \
     --input_size ${INPUT_SIZE} \
     --weight_decay ${WEIGHT_DECAY} \
     --drop_path ${DROP_PATH} \
-    --log_dir "./logs/tb" \
-    --finetune "./ckpts/mae_bootstrap/pretrain_final/checkpoint-39.pth" \
+    --log_dir ${LOG_DIR} \
+    --finetune ${CKPT} \
     --nb_classes 10 \
     --mixup 0.8 \
     --cutmix 1.0 \
-    --dist_eval
+    --current_datetime ${CURRENT_DATETIME} \
+    # --dist_eval

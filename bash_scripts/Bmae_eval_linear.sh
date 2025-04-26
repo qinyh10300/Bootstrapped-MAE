@@ -6,7 +6,6 @@ MODEL="deit_tiny_patch4"
 DATA_PATH="./dataset/cifar10_dataset"
 OUTPUT_DIR="./ckpts/${NAME}/linprobe"
 BATCH_SIZE=64  # modfiy to fit your GPU memory
-ACCUM=2
 EPOCHS=100
 WARMUP_EPOCHS=10
 BASE_LR=0.01
