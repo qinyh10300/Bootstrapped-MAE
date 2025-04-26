@@ -3,7 +3,7 @@ export OMP_NUM_THREADS=4
 
 NAME="mae_deit_pretrain"
 CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
-LOG_DIR="./logs/${NAME}/tb_${NAME}_${CURRENT_DATETIME}"
+LOG_DIR="./logs/${NAME}/tb_${CURRENT_DATETIME}"
 MODEL="mae_deit_tiny_patch4"
 DATA_PATH="./dataset/cifar10_dataset"
 OUTPUT_DIR="./ckpts/${NAME}/${CURRENT_DATETIME}"
