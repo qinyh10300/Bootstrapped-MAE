@@ -93,13 +93,13 @@ def vit_huge_patch14(**kwargs):
         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
     return model
 
-def vit_tiny_patch16(**kwargs):
+def vit_tiny_patch4(**kwargs):
     model = VisionTransformer(
         img_size=32, patch_size=4, embed_dim=192, depth=12, num_heads=3, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
     return model
 
-def deit_tiny_patch16(**kwargs):
+def deit_tiny_patch4(**kwargs):
     model = VisionTransformer(
         img_size=32, patch_size=4, embed_dim=192, depth=12, num_heads=3, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), is_distill_token=True, **kwargs)

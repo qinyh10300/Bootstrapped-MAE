@@ -89,6 +89,8 @@ def get_args_parser():
     parser.add_argument('--seed', default=0, type=int)
     parser.add_argument('--resume', default='',
                         help='resume from checkpoint')
+    parser.add_argument('--current_datetime', required=True,
+                        help='current datetime of running the code')
 
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
                         help='start epoch')
@@ -192,6 +194,7 @@ def main(args):
     )
 
     if args.finetune and not args.eval:
+        print(f"Loading checkpoint from: {args.finetune}")
         checkpoint = torch.load(args.finetune, map_location='cpu')
 
         print("Load pre-trained checkpoint from: %s" % args.finetune)
