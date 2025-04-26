@@ -1,18 +1,17 @@
 #!/bin/bash
 export OMP_NUM_THREADS=4
 
-NAME="Bmae_deit_finetune"
+NAME="mae_deit_linear"
 MODEL="deit_tiny_patch4"
 DATA_PATH="./dataset/cifar10_dataset"
-OUTPUT_DIR="./ckpts/Bmae/finetune"
-BATCH_SIZE=256
+OUTPUT_DIR="./ckpts/mae/linprobe"
+BATCH_SIZE=256  # modfiy to fit your GPU memory
 EPOCHS=100
 WARMUP_EPOCHS=10
-BASE_LR=1e-3
-INPUT_SIZE=32
+BASE_LR=0.01
 WEIGHT_DECAY=0
-DROP_PATH=0.05
-CKPT="ckpts/Bmae_train_deit/pretrained/Bmae-5_EMA-39.pth"
+INPUT_SIZE=32
+CKPT="ckpts/mae_2025-04-26_16-56-35-199.pth"
 
 # 获取当前日期和时间
 CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
@@ -20,23 +19,19 @@ CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
 # 动态生成日志目录
 LOG_DIR="./logs/${NAME}/tb_${NAME}_${CURRENT_DATETIME}"
 
-python main_finetune.py \
+python main_linprobe.py \
     --model ${MODEL} \
+    --input_size ${INPUT_SIZE} \
     --data_path ${DATA_PATH} \
     --output_dir ${OUTPUT_DIR} \
     --batch_size ${BATCH_SIZE} \
     --epochs ${EPOCHS} \
     --warmup_epochs ${WARMUP_EPOCHS} \
     --blr ${BASE_LR} \
-    --input_size ${INPUT_SIZE} \
     --weight_decay ${WEIGHT_DECAY} \
-    --drop_path ${DROP_PATH} \
     --log_dir ${LOG_DIR} \
     --finetune ${CKPT} \
     --nb_classes 10 \
-    --mixup 0.8 \
-    --cutmix 1.0 \
+    --device cuda:0 \
     --current_datetime ${CURRENT_DATETIME} \
-    --device cuda:0 
-    # 由于Mixup库源码的问题，这里只能使用cuda:0
-    # --dist_eval
+    # --dist_eval  # 是否采用分布式评估
