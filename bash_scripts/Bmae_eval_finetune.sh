@@ -37,5 +37,5 @@ python main_finetune.py \
     --mixup 0.8 \
     --cutmix 1.0 \
     --current_datetime ${CURRENT_DATETIME} \
-    --device cuda:0 \
+    --device cuda:0 \  # 由于Mixup库源码的问题，这里只能使用cuda:0
     # --dist_eval
