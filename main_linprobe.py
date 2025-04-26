@@ -50,6 +50,9 @@ def get_args_parser():
     # Model parameters
     parser.add_argument('--model', default='vit_large_patch16', type=str, metavar='MODEL',
                         help='Name of model to train')
+    
+    parser.add_argument('--input_size', default=224, type=int,
+                        help='images input size')
 
     # Optimizer parameters
     parser.add_argument('--weight_decay', type=float, default=0,
@@ -132,15 +135,18 @@ def main(args):
 
     # linear probe: weak augmentation
     transform_train = transforms.Compose([
-            RandomResizedCrop(224, interpolation=3),
+            # RandomResizedCrop(32, interpolation=3),
+            transforms.RandomResizedCrop(args.input_size, scale=(0.2, 1.0), interpolation=3),  # 3 is bicubic
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+            # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # ImageNet mean/std
+            transforms.Normalize(mean=[0.4919, 0.4827, 0.4472], std=[0.2022, 0.1994, 0.2010])])   # CIFAR-10 mean/std
     transform_val = transforms.Compose([
-            transforms.Resize(256, interpolation=3),
-            transforms.CenterCrop(224),
+            # transforms.Resize(256, interpolation=3),
+            # transforms.CenterCrop(224),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+            # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # ImageNet mean/std
+            transforms.Normalize(mean=[0.4919, 0.4827, 0.4472], std=[0.2022, 0.1994, 0.2010])])   # CIFAR-10 mean/std
     dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
     dataset_val = datasets.ImageFolder(os.path.join(args.data_path, 'val'), transform=transform_val)
     print(dataset_train)
@@ -284,7 +290,7 @@ def main(args):
         if args.output_dir:
             misc.save_model(
                 args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                loss_scaler=loss_scaler, epoch=epoch)
+                loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae_linprobe_{args.current_datetime}")
 
         test_stats = evaluate(data_loader_val, model, device)
         print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")

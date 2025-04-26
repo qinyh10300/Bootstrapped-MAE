@@ -11,6 +11,7 @@ EPOCHS=100
 WARMUP_EPOCHS=10
 BASE_LR=0.01
 WEIGHT_DECAY=0
+INPUT_SIZE=32
 CKPT="./ckpts/Bmae_train_deit/pretrained/Bmae-5_EMA-39.pth"
 
 # 获取当前日期和时间
@@ -21,6 +22,7 @@ LOG_DIR="./logs/${NAME}/tb_${NAME}_${CURRENT_DATETIME}"
 
 python main_linprobe.py \
     --model ${MODEL} \
+    --input_size ${INPUT_SIZE} \
     --data_path ${DATA_PATH} \
     --output_dir ${OUTPUT_DIR} \
     --batch_size ${BATCH_SIZE} \
