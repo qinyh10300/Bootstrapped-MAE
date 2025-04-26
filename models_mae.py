@@ -26,7 +26,7 @@ class MaskedAutoencoderViT(nn.Module):
                  embed_dim=1024, depth=24, num_heads=16,
                  decoder_embed_dim=512, decoder_depth=8, decoder_num_heads=16,
                  mlp_ratio=4., norm_layer=nn.LayerNorm, norm_pix_loss=False, 
-                 is_distill_token=False, is_bootstrapping=False, last_model=None, bootstrap_method='last_layer'):
+                 is_distill_token=False, is_bootstrapping=False, bootstrap_method='last_layer'):
         super().__init__()
 
         # --------------------------------------------------------------------------
@@ -39,7 +39,6 @@ class MaskedAutoencoderViT(nn.Module):
             assert bootstrap_method in ['last_layer', 'all_layers'], 'bootstrap_method must be one of [last_layer, all_layers]'
 
         self.is_bootstrapping = is_bootstrapping
-        self.last_model = last_model
         self.bootstrap_method = bootstrap_method
 
         self.is_distill_token = is_distill_token
@@ -241,17 +240,17 @@ class MaskedAutoencoderViT(nn.Module):
 
         return x
 
-    def forward_loss(self, imgs, pred, mask):
+    def forward_loss(self, imgs, pred, mask, last_model=None):
         """
         imgs: [N, 3, H, W]
         pred: [N, L, p*p*3]
         mask: [N, L], 0 is keep, 1 is remove, 
         """
-        if self.is_bootstrapping and self.last_model is not None:
+        if self.is_bootstrapping and last_model is not None:
             with torch.no_grad():
                 self.target_model.eval()
                 if self.bootstrap_method == 'last_layer':
-                    target, _, _ = self.last_model.forward_encoder(imgs, mask_ratio=0.0)
+                    target, _, _ = last_model.forward_encoder(imgs, mask_ratio=0.0)
                 else:
                     raise NotImplementedError('bootstrap_method must be one of [last_layer, all_layers]')
                 
@@ -278,10 +277,10 @@ class MaskedAutoencoderViT(nn.Module):
             loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
             return loss
 
-    def forward(self, imgs, mask_ratio=0.75):
+    def forward(self, imgs, mask_ratio=0.75, last_model=None):
         latent, mask, ids_restore = self.forward_encoder(imgs, mask_ratio)
         pred = self.forward_decoder(latent, ids_restore)  # [N, L, p*p*3]
-        loss = self.forward_loss(imgs, pred, mask)
+        loss = self.forward_loss(imgs, pred, mask, last_model)
         return loss, pred, mask
 
 

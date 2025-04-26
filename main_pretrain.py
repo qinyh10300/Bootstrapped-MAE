@@ -216,6 +216,7 @@ def main(args):
         epochs_per_bootstrap = args.epochs // args.bootstrap_steps
         print(f"Start training Bootstrapped MAE for {args.epochs} epochs in total, {epochs_per_bootstrap} epochs per bootstrap step")
         start_time = time.time()
+        last_model = None
 
         for bootstrap_iter in range(args.bootstrap_steps):
             print(f"Starting bootstrap iteration {bootstrap_iter + 1}/{args.bootstrap_steps}")
@@ -236,7 +237,8 @@ def main(args):
                     model, data_loader_train,
                     optimizer, device, epoch, loss_scaler,
                     log_writer=log_writer,
-                    args=args
+                    args=args,
+                    last_model=last_model,
                 )
                 if args.use_ema:
                     # TODO
@@ -265,7 +267,6 @@ def main(args):
 
             # Update target model for bootstrapping
             last_model = copy.deepcopy(model)
-            model.last_model = last_model
 
             total_time = time.time() - start_time
             total_time_str = str(datetime.timedelta(seconds=int(total_time)))
