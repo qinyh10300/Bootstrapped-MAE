@@ -88,6 +88,8 @@ def get_args_parser():
                         help='resume from checkpoint')
     parser.add_argument('--ckpt_name', default='checkpoint',
                         help='name of checkpoint')
+    parser.add_argument('--current_datetime', required=True,
+                        help='current datetime of running the code')
 
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
                         help='start epoch')
@@ -247,13 +249,13 @@ def main(args):
                 if args.output_dir and (epoch % 20 == 0 or epoch + 1 == epochs_per_bootstrap):
                     misc.save_model(
                         args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                        loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1}")
+                        loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1}_{args.current_datetime}")
                     
                     if args.use_ema:
                         ema_model.apply_shadow()
                         misc.save_model(
                             args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                            loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1}_EMA")
+                            loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1}_EMA_{args.current_datetime}")
                         ema_model.restore()
 
                 log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},

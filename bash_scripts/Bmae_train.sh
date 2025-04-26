@@ -5,7 +5,7 @@ NAME="Bmae_train_deit"
 MODEL="mae_deit_tiny_patch4"
 DATA_PATH="./dataset/cifar10_dataset"
 OUTPUT_DIR="./ckpts/${NAME}/pretrained"
-BATCH_SIZE=128  # modfiy to fit your GPU memory
+BATCH_SIZE=256  # modfiy to fit your GPU memory
 ACCUM=2
 EPOCHS=200
 WARMUP_EPOCHS=10
@@ -40,3 +40,5 @@ python main_pretrain.py \
     --bootstrap_method ${BOOTSTRAP_METHOD} \
     --use_ema \
     --ema_decay ${EMA_DECAY} \
+    --device cuda:2 \
+    --current_datetime ${CURRENT_DATETIME} \
