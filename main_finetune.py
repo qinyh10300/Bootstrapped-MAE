@@ -215,6 +215,9 @@ def main(args):
         drop_last=False
     )
 
+    # 不同的数据增强方法
+    # Mixup: 通过将两张图像及其对应的标签按一定比例混合，生成新的训练样本。
+    # CutMix: 通过将一张图像的某个区域替换为另一张图像的对应区域，同时调整标签。
     mixup_fn = None
     mixup_active = args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None
     if mixup_active:
