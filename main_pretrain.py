@@ -214,8 +214,7 @@ def main(args):
     if args.is_bootstrapping:
         assert args.epochs % args.bootstrap_steps == 0, "Total epochs should be divisible by bootstrap steps."
         epochs_per_bootstrap = args.epochs // args.bootstrap_steps
-        print(f"Start training Bootstrapped MAE for {args.epochs} epochs in total, \
-              {epochs_per_bootstrap} epochs per bootstrap step")
+        print(f"Start training Bootstrapped MAE for {args.epochs} epochs in total, {epochs_per_bootstrap} epochs per bootstrap step")
         start_time = time.time()
 
         for bootstrap_iter in range(args.bootstrap_steps):
@@ -246,13 +245,13 @@ def main(args):
                 if args.output_dir and (epoch % 20 == 0 or epoch + 1 == epochs_per_bootstrap):
                     misc.save_model(
                         args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                        loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae_{bootstrap_iter + 1}")
+                        loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1}")
                     
                     if args.use_ema:
                         ema_model.apply_shadow()
                         misc.save_model(
                             args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                            loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae_{bootstrap_iter + 1}_EMA")
+                            loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1}_EMA")
                         ema_model.restore()
 
                 log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
