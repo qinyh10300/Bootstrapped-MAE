@@ -13,6 +13,7 @@ BASE_LR=1.5e-4
 INPUT_SIZE=32
 MASK_RATIO=0.75
 DEVICE="cuda:0"
+CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
 
 # 解析命令行参数
 while [[ $# -gt 0 ]]; do
@@ -61,6 +62,10 @@ while [[ $# -gt 0 ]]; do
       DEVICE="$2"
       shift 2
       ;;
+    --current_datetime)
+      CURRENT_DATETIME="$2"
+      shift 2
+      ;;
     *)
       echo "Unknown argument: $1"
       exit 1
@@ -69,7 +74,6 @@ while [[ $# -gt 0 ]]; do
 done
 
 # 动态生成日志和输出目录
-CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
 LOG_DIR="./logs/${NAME}/tb_${CURRENT_DATETIME}"
 OUTPUT_DIR="./ckpts/${NAME}/${CURRENT_DATETIME}"
 
