@@ -254,25 +254,25 @@ def main(args):
                     last_model=last_model,
                 )
                 if args.use_ema:
-                    # TODO
                     ema_model.update()
 
                 if args.output_dir and (epoch % 20 == 0 or epoch + 1 == epochs_per_bootstrap):
-                    # original Bmae
-                    misc.save_model(
-                        args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                        loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1}")
-                    
-                    # Bmae with EMA but EMA is not the target model
                     if args.use_ema:
+                        # Bmae with EMA
                         ema_model.apply_shadow()
                         misc.save_model(
                             args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
                             loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-ema-{bootstrap_iter + 1}")
                         ema_model.restore()
+                    else:
+                        # original Bmae
+                        misc.save_model(
+                            args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                            loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1}")
 
                 log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
-                            'epoch': epoch,}
+                            'epoch': epoch,
+                            'bootstrap_iter': bootstrap_iter + 1,}
 
                 if args.output_dir and misc.is_main_process():
                     if log_writer is not None:
