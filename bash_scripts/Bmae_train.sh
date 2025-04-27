@@ -16,6 +16,7 @@ BOOTSTRAP_STEPS=5
 BOOTSTRAP_METHOD='last_layer'
 EMA_DECAY=0.99
 DEVICE="cuda:0"
+USE_EMA=false  # 默认不使用 EMA
 CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
 
 # 解析命令行参数
@@ -77,6 +78,10 @@ while [[ $# -gt 0 ]]; do
       DEVICE="$2"
       shift 2
       ;;
+    --use_ema)
+      USE_EMA=true  # 如果传入 --use_ema，则启用 EMA
+      shift 1
+      ;;
     --current_datetime)
       CURRENT_DATETIME="$2"
       shift 2
@@ -111,6 +116,7 @@ echo "bootstrap_steps: ${BOOTSTRAP_STEPS}" >> ${PARAMS_FILE}
 echo "bootstrap_method: ${BOOTSTRAP_METHOD}" >> ${PARAMS_FILE}
 echo "ema_decay: ${EMA_DECAY}" >> ${PARAMS_FILE}
 echo "device: ${DEVICE}" >> ${PARAMS_FILE}
+echo "use_ema: ${USE_EMA}" >> ${PARAMS_FILE}
 echo "log_dir: ${LOG_DIR}" >> ${PARAMS_FILE}
 echo "output_dir: ${OUTPUT_DIR}" >> ${PARAMS_FILE}
 echo "current_datetime: ${CURRENT_DATETIME}" >> ${PARAMS_FILE}
@@ -133,7 +139,7 @@ python main_pretrain.py \
     --is_bootstrapping \
     --bootstrap_steps ${BOOTSTRAP_STEPS} \
     --bootstrap_method ${BOOTSTRAP_METHOD} \
-    --use_ema \
+    $( [ "${USE_EMA}" = true ] && echo "--use_ema" ) \
     --ema_decay ${EMA_DECAY} \
     --device ${DEVICE} \
     --current_datetime ${CURRENT_DATETIME}

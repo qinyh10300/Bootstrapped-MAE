@@ -3,6 +3,7 @@ import json
 import os
 from datetime import datetime
 
+# Define the hyperparameters to explore
 BOOTSTRAP_STEPS = [1, 2, 4, 8, 16, 32]
 USE_EMA = [True, False]
 

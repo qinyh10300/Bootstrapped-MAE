@@ -1,7 +1,6 @@
 import subprocess
 import json
 import os
-from datetime import datetime
 
 # Define the hyperparameters to explore
 ACCUM_VALUES = [1, 2, 4]
@@ -9,29 +8,33 @@ WARMUP_EPOCHS_VALUES = [10]
 BASE_LR_VALUES = [1e-4, 1.5e-4]
 
 # Output log file
-log_file = "./experiments/hyperparam_results/pretrain_lr_tuning.log"
+log_file = "hyperparam_pretrain.log"
 
 # Make sure to clear the log file before starting
 if os.path.exists(log_file):
-    assert os.path.getsize(log_file) == 0, f"Log file {log_file} is not empty. Please clear it before running the script."
+    os.remove(log_file)
 
 # Function to run the training process and capture the last line from log.txt
 def run_training(accum, warmup_epochs, base_lr):
     # Define the output directory based on the hyperparameters
-    current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # 获取当前时间并格式化为字符串
-    print("current_datetime:", current_datetime)
-    name = "Bmae_deit_pretrain_pretrain_accum_{accum}_warmup_{warmup_epochs}_base_lr_{base_lr}"
-    output_dir = f"./ckpts/{name}/{current_datetime}"
+    output_dir = f"../ckpts/mae_baseline/pretrain_accum{accum}_warmup{warmup_epochs}_lr{base_lr}"
     
     # Run the training script using subprocess
     command = [
-        "bash", "bash_scripts/Bmae_train.sh", 
+        "torchrun", "--nproc_per_node=8", "../main_pretrain.py", 
+        "--world_size", "8", 
+        "--model", "mae_vit_tiny_patch4", 
+        "--data_path", "../datasets/cifar10_dataset", 
+        "--output_dir", output_dir, 
+        "--batch_size", "128", 
         "--accum_iter", str(accum), 
+        "--epochs", "200", 
         "--warmup_epochs", str(warmup_epochs), 
         "--blr", str(base_lr), 
-        "--current_datetime", str(current_datetime),
-        "--name", str(name),
-        "--device", "cuda:1",
+        "--input_size", "32", 
+        "--mask_ratio", "0.75", 
+        "--norm_pix_loss", 
+        "--log_dir", "../logs/tb"
     ]
     
     # Run the command and capture the output
@@ -60,11 +63,7 @@ def run_training(accum, warmup_epochs, base_lr):
                 print(f"Error parsing last line of {log_path}")
                 return None
 
-# 确保日志文件的父目录存在
-log_dir = os.path.dirname(log_file)
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
-
+# Open the log file for appending results
 with open(log_file, "a") as log:
     # Iterate over all combinations of hyperparameters
     for accum in ACCUM_VALUES:
