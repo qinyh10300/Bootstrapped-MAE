@@ -18,6 +18,7 @@ from timm.models.vision_transformer import PatchEmbed, Block
 
 from util.pos_embed import get_2d_sincos_pos_embed
 
+from methods import *
 
 class MaskedAutoencoderViT(nn.Module):
     """ Masked Autoencoder with VisionTransformer backbone
@@ -26,7 +27,8 @@ class MaskedAutoencoderViT(nn.Module):
                  embed_dim=1024, depth=24, num_heads=16,
                  decoder_embed_dim=512, decoder_depth=8, decoder_num_heads=16,
                  mlp_ratio=4., norm_layer=nn.LayerNorm, norm_pix_loss=False, 
-                 is_distill_token=False, is_bootstrapping=False, bootstrap_method='last_layer'):
+                 is_distill_token=False, is_bootstrapping=False, bootstrap_method='Last_layer',
+                 feature_layers=None):
         super().__init__()
 
         # --------------------------------------------------------------------------
@@ -36,8 +38,13 @@ class MaskedAutoencoderViT(nn.Module):
         self.num_patches = num_patches
 
         if is_bootstrapping:
-            assert bootstrap_method in ['last_layer', 'all_layers'], 'bootstrap_method must be one of [last_layer, all_layers]'
+            assert bootstrap_method in ['Last_layer', 'Hierarchical Fixed Weighting', 'Hierarchical Adaptive Weighting', \
+                                        'Cross-layer Self-attention', 'Cross-layer Concatenation and Projection'], \
+                    'bootstrap_method must be one of [Last_layer, Hierarchical Fixed Weighting, Hierarchical Adaptive Weighting, \
+                    Cross-layer Self-attention, Cross-layer Concatenation and Projection]'
+            assert bootstrap_method is not 'Last_layer' and feature_layers is not None, 'feature_layers must be specified for Hierarchical layers bootstrap'
 
+        self.feature_layers = feature_layers
         self.is_bootstrapping = is_bootstrapping
         self.bootstrap_method = bootstrap_method
 
@@ -198,6 +205,19 @@ class MaskedAutoencoderViT(nn.Module):
         # apply Transformer blocks
         for blk in self.blocks:
             x = blk(x)
+
+        # if self.bootstrap_method == 'Last_layer':
+        #     for blk in self.decoder_blocks:
+        #         x = blk(x)
+        # elif self.bootstrap_method == 'Hierarchical Fixed Weighting':
+        #     for index, blk in enumerate(self.decoder_blocks):
+        #         x = blk(x)
+        #         if (index + 1) in self.feature_layers:
+        #             features += x
+        #     x = features / len(self.feature_layers)   # 相当于均匀分配各层之间的权重
+        # else:
+        #     raise NotImplementedError('bootstrap_method must be one of [Last_layer, Hierarchical]')
+        
         x = self.norm(x)
 
         return x, mask, ids_restore
@@ -249,10 +269,7 @@ class MaskedAutoencoderViT(nn.Module):
         if self.is_bootstrapping and last_model is not None:
             with torch.no_grad():
                 self.target_model.eval()
-                if self.bootstrap_method == 'last_layer':
-                    target, _, _ = last_model.forward_encoder(imgs, mask_ratio=0.0)
-                else:
-                    raise NotImplementedError('bootstrap_method must be one of [last_layer, all_layers]')
+                target, _, _ = last_model.forward_encoder(imgs, mask_ratio=0.0)
                 
                 if self.is_distill_token:
                     target = nn.functional.normalize(target[:, 1:-1, :], dim=-1)
