@@ -218,14 +218,21 @@ def main(args):
     misc.load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
     
     if args.is_bootstrapping:
-        assert args.epochs % args.bootstrap_steps == 0, "Total epochs should be divisible by bootstrap steps."
+        # assert args.epochs % args.bootstrap_steps == 0, "Total epochs should be divisible by bootstrap steps."
         epochs_per_bootstrap = args.epochs // args.bootstrap_steps
+        remaining_epochs = args.epochs % args.bootstrap_steps
         print(f"Start training Bootstrapped MAE for {args.epochs} epochs in total, {epochs_per_bootstrap} epochs per bootstrap step")
         start_time = time.time()
         last_model = None
 
         for bootstrap_iter in range(args.bootstrap_steps):
             print(f"Starting bootstrap iteration {bootstrap_iter + 1}/{args.bootstrap_steps}")
+
+            if bootstrap_iter == args.bootstrap_steps - 1:
+                current_bootstrap_step_epochs = epochs_per_bootstrap + remaining_epochs
+            else:
+                current_bootstrap_step_epochs = epochs_per_bootstrap
+            print(f"Training for {current_bootstrap_step_epochs} epochs in this bootstrap step")
 
             # TODO: 调整每个bootstrap step的学习率（EMA）。后话，调整学习率部分
             # # Update target model for bootstrapping
@@ -236,7 +243,7 @@ def main(args):
             #         param_group['lr'] = args.lr * (args.ema_lr_decay ** bootstrap_iter)
 
             # Train for epochs_per_bootstrap epochs
-            for epoch in range(epochs_per_bootstrap):
+            for epoch in range(current_bootstrap_step_epochs):
                 if args.distributed:
                     data_loader_train.sampler.set_epoch(epoch)
                 train_stats = train_one_epoch(
@@ -251,15 +258,17 @@ def main(args):
                     ema_model.update()
 
                 if args.output_dir and (epoch % 20 == 0 or epoch + 1 == epochs_per_bootstrap):
+                    # original Bmae
                     misc.save_model(
                         args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
                         loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1}")
                     
+                    # Bmae with EMA but EMA is not the target model
                     if args.use_ema:
                         ema_model.apply_shadow()
                         misc.save_model(
                             args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                            loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1} (EMA)")
+                            loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-ema-{bootstrap_iter + 1}")
                         ema_model.restore()
 
                 log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
@@ -272,7 +281,12 @@ def main(args):
                         f.write(json.dumps(log_stats) + "\n")
 
             # Update target model for bootstrapping
-            last_model = copy.deepcopy(model)
+            if args.use_ema:
+                ema_model.apply_shadow()
+                last_model = copy.deepcopy(ema_model)
+                ema_model.restore()
+            else:
+                last_model = copy.deepcopy(model)
 
             total_time = time.time() - start_time
             total_time_str = str(datetime.timedelta(seconds=int(total_time)))

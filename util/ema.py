@@ -2,7 +2,7 @@ class EMA():
     def __init__(self, model, decay):
         self.model = model
         self.decay = decay
-        self.shadow = {}
+        self.shadow = {}     # just a dictionary, not a model
         self.backup = {}
 
     def register(self):
