@@ -9,16 +9,16 @@ EMA_DECAY = [0.999, 0.99, 0.9]
 # Output log file
 log_file = "./experiments/hyperparam_results/pretrain_half_life_tuning.log"
 
-# Make sure to clear the log file before starting
-if os.path.exists(log_file):
-    assert os.path.getsize(log_file) == 0, f"Log file {log_file} is not empty. Please clear it before running the script."
+# # Make sure to clear the log file before starting
+# if os.path.exists(log_file):
+#     assert os.path.getsize(log_file) == 0, f"Log file {log_file} is not empty. Please clear it before running the script."
 
 # Function to run the training process and capture the last line from log.txt
 def run_training(ema_decay):
     # Define the output directory based on the hyperparameters
     current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # 获取当前时间并格式化为字符串
     print("current_datetime:", current_datetime)
-    name = "Bmae_deit_pretrain_pretrain_accum_ema_decay_{ema_decay}"
+    name = f"Bmae_deit_pretrain_pretrain_ema_decay_{ema_decay}"
     output_dir = f"./ckpts/{name}/{current_datetime}"
     
     # Run the training script using subprocess
@@ -63,6 +63,11 @@ if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 
 with open(log_file, "a") as log:
+    log_current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # 获取当前时间并格式化为字符串
+    log.write(f"\n\n*****************************************************************\n")
+    log.write(f"Start logging pretrain half-life tuning, at{log_current_datetime}\n")
+    print(f"FStart logging pretrain half-life tuning, at{log_current_datetime}")
+
     # Iterate over all combinations of hyperparameters
     for ema_decay in EMA_DECAY:
         print(f"Running training with EMA_DECAY={ema_decay}")
@@ -76,3 +81,7 @@ with open(log_file, "a") as log:
         else:
             log.write(f"ERROR: EMA_DECAY={ema_decay}, STATUS=FAILED\n")
             print(f"Error with: EMA_DECAY={ema_decay}. Marking as FAILED.")
+    
+    log.write(f"Finish logging pretrain half-life tuning, at{log_current_datetime}\n")
+    log.write(f"*****************************************************************\n\n")
+    print(f"Finish logging pretrain half-life tuning, at{log_current_datetime}")

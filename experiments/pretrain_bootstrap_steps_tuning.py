@@ -10,16 +10,16 @@ USE_EMA = [True, False]
 # Output log file
 log_file = "./experiments/hyperparam_results/pretrain_bootstrap_steps_tuning.log"
 
-# Make sure to clear the log file before starting
-if os.path.exists(log_file):
-    assert os.path.getsize(log_file) == 0, f"Log file {log_file} is not empty. Please clear it before running the script."
+# # Make sure to clear the log file before starting
+# if os.path.exists(log_file):
+#     assert os.path.getsize(log_file) == 0, f"Log file {log_file} is not empty. Please clear it before running the script."
 
 # Function to run the training process and capture the last line from log.txt
 def run_training(bootstrap_steps, use_ema):
     # Define the output directory based on the hyperparameters
     current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # 获取当前时间并格式化为字符串
     print("current_datetime:", current_datetime)
-    name = "Bmae_deit_pretrain_bootstrap_steps_{bootstrap_steps}_use_ema_{use_ema}"
+    name = f"Bmae_deit_pretrain_bootstrap_steps_{bootstrap_steps}_use_ema_{use_ema}"
     output_dir = f"./ckpts/{name}/{current_datetime}"
     
     # Run the training script using subprocess
@@ -66,6 +66,11 @@ if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 
 with open(log_file, "a") as log:
+    log_current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # 获取当前时间并格式化为字符串
+    log.write(f"\n\n*****************************************************************\n")
+    log.write(f"Start logging pretrain bs_steps tuning, at{log_current_datetime}\n")
+    print(f"FStart logging pretrain bs_steps tuning, at{log_current_datetime}")
+
     for bootstrap_steps in BOOTSTRAP_STEPS:
         for use_ema in USE_EMA:
             print(f"Running training with BOOTSTRAP_STEPS={bootstrap_steps}, USE_EMA={use_ema}")
@@ -78,3 +83,7 @@ with open(log_file, "a") as log:
             else:
                 log.write(f"ERROR: BOOTSTRAP_STEPS={bootstrap_steps}, USE_EMA={use_ema}, STATUS=FAILED\n")
                 print(f"Error with: BOOTSTRAP_STEPS={bootstrap_steps}, USE_EMA={use_ema}. Marking as FAILED.")
+
+    log.write(f"Finish logging pretrain bs_step tuning, at{log_current_datetime}\n")
+    log.write(f"*****************************************************************\n\n")
+    print(f"Finish logging pretrain bs_step tuning, at{log_current_datetime}")

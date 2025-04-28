@@ -11,16 +11,16 @@ BASE_LR_VALUES = [1e-4, 1.5e-4]
 # Output log file
 log_file = "./experiments/hyperparam_results/pretrain_lr_tuning.log"
 
-# Make sure to clear the log file before starting
-if os.path.exists(log_file):
-    assert os.path.getsize(log_file) == 0, f"Log file {log_file} is not empty. Please clear it before running the script."
+# # Make sure to clear the log file before starting
+# if os.path.exists(log_file):
+#     assert os.path.getsize(log_file) == 0, f"Log file {log_file} is not empty. Please clear it before running the script."
 
 # Function to run the training process and capture the last line from log.txt
 def run_training(accum, warmup_epochs, base_lr):
     # Define the output directory based on the hyperparameters
     current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # 获取当前时间并格式化为字符串
     print("current_datetime:", current_datetime)
-    name = "Bmae_deit_pretrain_pretrain_accum_{accum}_warmup_{warmup_epochs}_base_lr_{base_lr}"
+    name = f"Bmae_deit_pretrain_pretrain_accum_{accum}_warmup_{warmup_epochs}_base_lr_{base_lr}"
     output_dir = f"./ckpts/{name}/{current_datetime}"
     
     # Run the training script using subprocess
@@ -32,6 +32,7 @@ def run_training(accum, warmup_epochs, base_lr):
         "--current_datetime", str(current_datetime),
         "--name", str(name),
         "--device", "cuda:1",
+        "--use_ema"
     ]
     
     # Run the command and capture the output
@@ -66,6 +67,11 @@ if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 
 with open(log_file, "a") as log:
+    log_current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # 获取当前时间并格式化为字符串
+    log.write(f"\n\n*****************************************************************\n")
+    log.write(f"Start logging pretrain lr tuning, at{log_current_datetime}\n")
+    print(f"FStart logging pretrain lr tuning, at{log_current_datetime}")
+
     # Iterate over all combinations of hyperparameters
     for accum in ACCUM_VALUES:
         for warmup_epochs in WARMUP_EPOCHS_VALUES:
@@ -81,3 +87,7 @@ with open(log_file, "a") as log:
                 else:
                     log.write(f"ERROR: ACCUM={accum}, WARMUP_EPOCHS={warmup_epochs}, BASE_LR={base_lr}, STATUS=FAILED\n")
                     print(f"Error with: ACCUM={accum}, WARMUP_EPOCHS={warmup_epochs}, BASE_LR={base_lr}. Marking as FAILED.")
+
+    log.write(f"Finish logging pretrain lr tuning, at{log_current_datetime}\n")
+    log.write(f"*****************************************************************\n\n")
+    print(f"Finish logging pretrain lr tuning, at{log_current_datetime}")
