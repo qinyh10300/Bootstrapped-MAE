@@ -65,8 +65,8 @@ if not os.path.exists(log_dir):
 with open(log_file, "a") as log:
     log_current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # 获取当前时间并格式化为字符串
     log.write(f"\n\n*****************************************************************\n")
-    log.write(f"Start logging pretrain half-life tuning, at{log_current_datetime}\n")
-    print(f"FStart logging pretrain half-life tuning, at{log_current_datetime}")
+    log.write(f"Start logging pretrain half-life tuning, at {log_current_datetime}\n")
+    print(f"FStart logging pretrain half-life tuning, at {log_current_datetime}")
 
     # Iterate over all combinations of hyperparameters
     for ema_decay in EMA_DECAY:
@@ -82,6 +82,6 @@ with open(log_file, "a") as log:
             log.write(f"ERROR: EMA_DECAY={ema_decay}, STATUS=FAILED\n")
             print(f"Error with: EMA_DECAY={ema_decay}. Marking as FAILED.")
     
-    log.write(f"Finish logging pretrain half-life tuning, at{log_current_datetime}\n")
+    log.write(f"Finish logging pretrain half-life tuning, at {log_current_datetime}\n")
     log.write(f"*****************************************************************\n\n")
-    print(f"Finish logging pretrain half-life tuning, at{log_current_datetime}")
+    print(f"Finish logging pretrain half-life tuning, at {log_current_datetime}")
