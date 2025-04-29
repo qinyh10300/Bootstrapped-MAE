@@ -35,13 +35,20 @@ def run_training(bootstrap_steps, use_ema):
         command.append("--use_ema")
     
     # Run the command and capture the output
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    
+    # Stream the output to the terminal in real-time
+    for line in process.stdout:
+        print(line, end="")  # Print each line of stdout in real-time
+    for line in process.stderr:
+        print(line, end="")  # Print each line of stderr in real-time
+    
+    # Wait for the process to complete
+    process.wait()
     
     # Check if the process ran successfully
     if process.returncode != 0:
         print(f"Error occurred with parameters: BOOTSTRAP_STEPS={bootstrap_steps}, USE_EMA={use_ema}")
-        print(stderr.decode())
         return None
     
     # Read the last line from the log file
@@ -69,7 +76,7 @@ with open(log_file, "a") as log:
     log_current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # 获取当前时间并格式化为字符串
     log.write(f"\n\n*****************************************************************\n")
     log.write(f"Start logging pretrain bs_steps tuning, at {log_current_datetime}\n")
-    print(f"FStart logging pretrain bs_steps tuning, at {log_current_datetime}")
+    print(f"Start logging pretrain bs_steps tuning, at {log_current_datetime}")
 
     for bootstrap_steps in BOOTSTRAP_STEPS:
         for use_ema in USE_EMA:
