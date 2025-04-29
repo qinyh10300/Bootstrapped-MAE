@@ -130,6 +130,7 @@ def main(args):
 
     print('job dir: {}'.format(os.path.dirname(os.path.realpath(__file__))))
     print("{}".format(args).replace(', ', ',\n'))
+    # print(args.is_bootstrapping)
 
     device = torch.device(args.device)
 
@@ -176,13 +177,13 @@ def main(args):
     
     # TODO: define the model
     if args.is_bootstrapping:
-        model = models_mae.__dict__[args.model](norm_pix_loss=args.norm_pix_loss)
-    else:
         model = models_mae.__dict__[args.model](
             norm_pix_loss=args.norm_pix_loss,
             is_bootstrapping=args.is_bootstrapping,
             bootstrap_method=args.bootstrap_method,
             )
+    else:
+        model = models_mae.__dict__[args.model](norm_pix_loss=args.norm_pix_loss)
 
     model.to(device)
 
@@ -290,23 +291,25 @@ def main(args):
             if args.use_ema:
                 ema_model.apply_shadow()
 
-                # 验证 ema_model 和 model 的参数值是否一致
-                print("Checking parameter values for ema_model and model:")
-                for (name, param), (ema_name, ema_param) in zip(model.named_parameters(), ema_model.model.named_parameters()):
-                    # 确保参数名称一致
-                    assert name == ema_name, f"Parameter name mismatch: {name} != {ema_name}"
+                # # 验证 ema_model 和 model 的参数值是否一致
+                # print("Checking parameter values for ema_model and model:")
+                # for (name, param), (ema_name, ema_param) in zip(model.named_parameters(), ema_model.model.named_parameters()):
+                #     # 确保参数名称一致
+                #     assert name == ema_name, f"Parameter name mismatch: {name} != {ema_name}"
                     
-                    # 比较参数值是否一致
-                    # print(param.data, ema_param.data)
-                    if not torch.equal(param.data, ema_param.data):
-                        print(f"Parameter '{name}' differs between model and ema_model!")
-                    else:
-                        print(f"Parameter '{name}' is identical between model and ema_model.")
+                #     # 比较参数值是否一致
+                #     # print(param.data, ema_param.data)
+                #     if not torch.equal(param.data, ema_param.data):
+                #         print(f"Parameter '{name}' differs between model and ema_model!")
+                #     else:
+                #         print(f"Parameter '{name}' is identical between model and ema_model.")
 
                 last_model = copy.deepcopy(ema_model.model)
                 ema_model.restore()
             else:
                 last_model = copy.deepcopy(model)
+
+            # last_model = None
 
             total_time = time.time() - start_time
             total_time_str = str(datetime.timedelta(seconds=int(total_time)))

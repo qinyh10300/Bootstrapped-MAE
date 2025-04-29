@@ -42,7 +42,9 @@ class MaskedAutoencoderViT(nn.Module):
                                         'Cross-layer Self-attention', 'Cross-layer Concatenation and Projection'], \
                     'bootstrap_method must be one of [Last_layer, Hierarchical Fixed Weighting, Hierarchical Adaptive Weighting, \
                     Cross-layer Self-attention, Cross-layer Concatenation and Projection]'
-            assert bootstrap_method is not 'Last_layer' and feature_layers is not None, 'feature_layers must be specified for Hierarchical layers bootstrap'
+            print(bootstrap_method)
+            if bootstrap_method != 'Last_layer':
+                assert feature_layers is not None, 'feature_layers must be specified for Hierarchical layers bootstrap'
 
         self.feature_layers = feature_layers
         self.is_bootstrapping = is_bootstrapping
@@ -266,9 +268,10 @@ class MaskedAutoencoderViT(nn.Module):
         pred: [N, L, p*p*3]
         mask: [N, L], 0 is keep, 1 is remove, 
         """
+        # print(self.is_bootstrapping, (last_model==None))
         if self.is_bootstrapping and last_model is not None:
+            # print("Bootstrapping")
             with torch.no_grad():
-                self.target_model.eval()
                 target, _, _ = last_model.forward_encoder(imgs, mask_ratio=0.0)
                 
                 if self.is_distill_token:
@@ -276,12 +279,19 @@ class MaskedAutoencoderViT(nn.Module):
                 else:
                     target = nn.functional.normalize(target[:, 1:, :], dim=-1)
 
+            pred, _, _ = last_model.forward_encoder(self.unpatchify(pred), mask_ratio=0.0)
+            if self.is_distill_token:
+                pred = nn.functional.normalize(pred[:, 1:-1, :], dim=-1)
+            else:
+                pred = nn.functional.normalize(pred[:, 1:, :], dim=-1)
+            # print(pred.shape, target.shape)
             loss = (pred - target) ** 2
             loss = loss.mean(dim=-1)  # [N, L], mean loss per patch
 
             loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
             return loss
         else:
+            # print("Original")
             target = self.patchify(imgs)
             if self.norm_pix_loss:
                 mean = target.mean(dim=-1, keepdim=True)

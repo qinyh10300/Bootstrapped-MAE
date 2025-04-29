@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 # Define the hyperparameters to explore
-BOOTSTRAP_STEPS = [1, 2, 4, 8, 16, 32]
+BOOTSTRAP_STEPS = [7,8,9]
 USE_EMA = [True, False]
 
 # Output log file
@@ -28,7 +28,7 @@ def run_training(bootstrap_steps, use_ema):
         "--bootstrap_steps", str(bootstrap_steps),
         "--current_datetime", str(current_datetime),
         "--name", str(name),
-        "--device", "cuda:0",
+        "--device", "cuda:2",
     ]
 
     if use_ema:
