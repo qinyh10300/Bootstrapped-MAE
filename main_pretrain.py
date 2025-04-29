@@ -188,7 +188,7 @@ def main(args):
 
     if args.use_ema:
         assert args.ema_decay < 1.0, "EMA decay should be less than 1.0"
-        ema_model = EMA(model, args.ema_decay)
+        ema_model = EMA(copy.deepcopy(model), args.ema_decay)
         ema_model.register()
 
     model_without_ddp = model
@@ -246,6 +246,7 @@ def main(args):
             for epoch in range(current_bootstrap_step_epochs):
                 if args.distributed:
                     data_loader_train.sampler.set_epoch(epoch)
+                print((last_model==None))
                 train_stats = train_one_epoch(
                     model, data_loader_train,
                     optimizer, device, epoch, loss_scaler,
@@ -255,6 +256,7 @@ def main(args):
                 )
                 if args.use_ema:
                     ema_model.update()
+                    print("EMA model update")
 
                 if args.output_dir and (epoch % 20 == 0 or epoch + 1 == epochs_per_bootstrap):
                     if args.use_ema:
@@ -287,7 +289,21 @@ def main(args):
             # Update target model for bootstrapping
             if args.use_ema:
                 ema_model.apply_shadow()
-                last_model = copy.deepcopy(ema_model)
+
+                # 验证 ema_model 和 model 的参数值是否一致
+                print("Checking parameter values for ema_model and model:")
+                for (name, param), (ema_name, ema_param) in zip(model.named_parameters(), ema_model.model.named_parameters()):
+                    # 确保参数名称一致
+                    assert name == ema_name, f"Parameter name mismatch: {name} != {ema_name}"
+                    
+                    # 比较参数值是否一致
+                    # print(param.data, ema_param.data)
+                    if not torch.equal(param.data, ema_param.data):
+                        print(f"Parameter '{name}' differs between model and ema_model!")
+                    else:
+                        print(f"Parameter '{name}' is identical between model and ema_model.")
+
+                last_model = copy.deepcopy(ema_model.model)
                 ema_model.restore()
             else:
                 last_model = copy.deepcopy(model)
