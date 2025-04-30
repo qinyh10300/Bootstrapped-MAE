@@ -14,6 +14,7 @@ INPUT_SIZE=32
 CKPT="ckpts/Bmae_train_deit/pretrained/Bmae-5_EMA-39.pth"
 DEVICE="cuda:1"
 CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
+SAVE_FREQUENCY=20
 
 # 解析命令行参数
 while [[ $# -gt 0 ]]; do
@@ -66,6 +67,10 @@ while [[ $# -gt 0 ]]; do
       CURRENT_DATETIME="$2"
       shift 2
       ;;
+    --save_frequency)
+      SAVE_FREQUENCY="$2"
+      shift 2
+      ;;
     *)
       echo "Unknown argument: $1"
       exit 1
@@ -96,6 +101,7 @@ echo "device: ${DEVICE}" >> ${PARAMS_FILE}
 echo "log_dir: ${LOG_DIR}" >> ${PARAMS_FILE}
 echo "output_dir: ${OUTPUT_DIR}" >> ${PARAMS_FILE}
 echo "current_datetime: ${CURRENT_DATETIME}" >> ${PARAMS_FILE}
+echo "save_frequency: ${SAVE_FREQUENCY}" >> ${PARAMS_FILE}
 
 # 执行 Python 脚本
 python main_linprobe.py \
@@ -113,4 +119,5 @@ python main_linprobe.py \
     --finetune ${CKPT} \
     --nb_classes 10 \
     --device ${DEVICE} \
-    --current_datetime ${CURRENT_DATETIME}
+    --current_datetime ${CURRENT_DATETIME} \
+    --save_frequency ${SAVE_FREQUENCY}

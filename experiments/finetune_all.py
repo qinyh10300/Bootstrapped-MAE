@@ -50,6 +50,7 @@ def run_training(ckpt):
         "--current_datetime", str(current_datetime),
         "--name", str(name),
         "--device", "cuda:0",  # finetune必须是cuda:0
+        "--save_frequency", "200"  # 相当于不save checkpoint
     ]
     
     # Run the command and capture the output

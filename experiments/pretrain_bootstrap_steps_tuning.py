@@ -29,6 +29,7 @@ def run_training(bootstrap_steps, use_ema):
         "--current_datetime", str(current_datetime),
         "--name", str(name),
         "--device", "cuda:2",
+        "--save_frequency", "200"
     ]
 
     if use_ema:
