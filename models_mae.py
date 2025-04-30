@@ -40,8 +40,9 @@ class MaskedAutoencoderViT(nn.Module):
         if is_bootstrapping:
             print(bootstrap_method)
             assert bootstrap_method in ['Last_layer', 'Fixed_layer_fusion', 'Adaptive_layer_fusion', 'Cross_layer_fusion', \
-                                        'Cross-layer Self-attention', 'Cross-layer Concatenation and Projection'], \
-                    'bootstrap_method must be one of [Last_layer, Fixed_layer_fusion, Adaptive_layer_fusion, Cross-layer Self-attention, Cross-layer Concatenation and Projection]'
+                                        'Gated_fusion_dynamic', 'Cross_layer_self_attention', 'Cross_layer_cross_attention'], \
+                    'bootstrap_method must be one of [Last_layer, Fixed_layer_fusion, Adaptive_layer_fusion, Cross_layer_fusion,' \
+                    ' Gated_fusion_dynamic, Cross_layer_self_attention and Cross_layer_cross_attention]'
             if bootstrap_method != 'Last_layer':
                 assert feature_layers is not None, 'feature_layers must be specified for Hierarchical layers bootstrap'
 
@@ -235,8 +236,26 @@ class MaskedAutoencoderViT(nn.Module):
                     if (index + 1) in self.feature_layers:
                         layer_outputs.append(x)
                 x = method_class(layer_outputs)
+            elif self.bootstrap_method == 'Cross_layer_self_attention':
+                assert method_class is not None, 'method_class must be specified for Cross_layer_self_attention'
+                layer_outputs = []
+                for index, blk in enumerate(self.blocks):
+                    x = blk(x)
+                    # print(x.shape)
+                    if (index + 1) in self.feature_layers:
+                        layer_outputs.append(x)
+                x = method_class(layer_outputs)
+            elif self.bootstrap_method == 'Cross_layer_cross_attention':
+                assert method_class is not None, 'method_class must be specified for Cross_layer_cross_attention'
+                layer_outputs = []
+                for index, blk in enumerate(self.blocks):
+                    x = blk(x)
+                    # print(x.shape)
+                    if (index + 1) in self.feature_layers:
+                        layer_outputs.append(x)
+                x = method_class(layer_outputs)
             else:
-                raise NotImplementedError('bootstrap_method must be one of [Last_layer, Hierarchical]')
+                raise NotImplementedError(f"Unknown bootstrap method: {self.bootstrap_method}")
         else:
             for blk in self.blocks:
                 x = blk(x)

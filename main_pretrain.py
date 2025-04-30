@@ -198,21 +198,23 @@ def main(args):
             )
         
         method_class = None
+        seq_len = 64 + 1   # 多一个cls_token
+        seq_len += 1       # 使用deit，多一个distill_token
         if args.bootstrap_method == 'Fixed_layer_fusion':
             assert len(args.feature_layers) == len(args.weights), "Length of feature layers and weights must be equal."
             method_class = FixedLayerFusion(args.weights)
         elif args.bootstrap_method == 'Adaptive_layer_fusion':
             method_class = AdaptiveLayerFusion(len(args.feature_layers))
         elif args.bootstrap_method == 'Cross_layer_fusion':
-            seq_len = 64 + 1   # 多一个cls_token
-            seq_len += 1   # 使用deit，多一个distill_token
             method_class = CrossLayerFusion(seq_len, len(args.feature_layers)).to(device)
+        elif args.bootstrap_method == 'Gated_fusion_dynamic':
+            method_class = GatedFusionDynamic(seq_len, len(args.feature_layers)).to(device)
+        elif args.bootstrap_method == 'Cross_layer_self_attention':
+            method_class = CrossLayerSelfAttention(seq_len, len(args.feature_layers), embed_dim=192).to(device)
+        elif args.bootstrap_method == 'Cross_layer_cross_attention':
+            method_class = CrossLayerCrossAttention(seq_len, len(args.feature_layers), embed_dim=192).to(device)
         elif args.bootstrap_method == 'Last_layer':
             pass
-        elif args.bootstrap_method == 'Gated_fusion_dynamic':
-            seq_len = 64 + 1   # 多一个cls_token
-            seq_len += 1   # 使用deit，多一个distill_token
-            method_class = GatedFusionDynamic(seq_len, len(args.feature_layers)).to(device)
         else:
             raise ValueError(f"Unknown bootstrap method: {args.bootstrap_method}")
     else:
@@ -349,8 +351,8 @@ def main(args):
 
             # last_model = None
             # print(method_class.weights)   # 查看参数值是否会变化
-            print(method_class.fc.weight[0][0].item())
-            print(method_class.fc.bias[0].item())
+            # print(method_class.fc.weight[0][0].item())
+            # print(method_class.fc.bias[0].item())
 
             total_time = time.time() - start_time
             total_time_str = str(datetime.timedelta(seconds=int(total_time)))

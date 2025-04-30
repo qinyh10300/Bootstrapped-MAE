@@ -56,7 +56,8 @@ def train_one_epoch(model: torch.nn.Module,
             sys.exit(1)
 
         loss /= accum_iter
-        loss_scaler(loss, optimizer, parameters=model.parameters(),
+        # print(list(model.parameters()) + list(method_class.parameters()))
+        loss_scaler(loss, optimizer, parameters=list(model.parameters()) + list(method_class.parameters()),
                     update_grad=(data_iter_step + 1) % accum_iter == 0)
         if (data_iter_step + 1) % accum_iter == 0:
             optimizer.zero_grad()

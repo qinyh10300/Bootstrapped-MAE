@@ -3,18 +3,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class GatedFusionDynamic(nn.Module):
-    def __init__(self, layer_dim, layer_num):
+    def __init__(self, seq_len, layer_num):
         super(GatedFusionDynamic, self).__init__()
         
         self.layer_num = layer_num
-        self.fc_gate = nn.ModuleList([nn.Linear(layer_dim, 1) for _ in range(layer_num)])  # 门控生成每个序列的权重
-        self.fc_output = nn.Linear(layer_dim, layer_dim)
+        self.fc_gate = nn.ModuleList([nn.Linear(seq_len, 1) for _ in range(layer_num)])  # 门控生成每个序列的权重
+        self.fc_output = nn.Linear(seq_len, seq_len)
 
     def forward(self, layer_outputs):
         assert len(layer_outputs) == self.layer_num, "The number of input layer_outputs must match layer_num."
         
         gates = []
         for i in range(self.layer_num):
+            layer_outputs[i] = layer_outputs[i].permute(0, 2, 1)
             gate = torch.sigmoid(self.fc_gate[i](layer_outputs[i]))  # 计算每个序列的门控
             gates.append(gate)
         
@@ -28,4 +29,7 @@ class GatedFusionDynamic(nn.Module):
                 gate_ij = (gates[i] + gates[j]) / 2  # 对每对序列计算门控平均值
                 fused_seq += gate_ij * (layer_outputs[i] + layer_outputs[j])  # 融合
 
-        return self.fc_output(fused_seq)
+        self.fc_output(fused_seq)
+        fused_seq = fused_seq.permute(0, 2, 1)
+
+        return fused_seq
