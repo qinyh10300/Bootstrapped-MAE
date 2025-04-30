@@ -116,9 +116,9 @@ def get_args_parser():
     parser.set_defaults(is_bootstrapping=False)
     parser.add_argument('--bootstrap_steps', default=5, type=int)
     parser.add_argument('--bootstrap_method', default='Last_layer', type=str)
-    parser.add_argument('--feature_layers', default=[1, 6, 12], type=int, nargs='+',
+    parser.add_argument('--feature_layers', default=[12], type=int, nargs='+',
                         help='List of feature layers (e.g., 1 6 12)')
-    parser.add_argument('--weights', default=[1, 1, 1], type=float, nargs='+',
+    parser.add_argument('--weights', default=[1], type=float, nargs='+',
                         help='List of weights (e.g., 1 6 12)')
 
     # ema parameters
@@ -244,8 +244,8 @@ def main(args):
     if method_class is not None:   # 如果 method_class 存在，将其参数加入优化器
         param_groups_model = optim_factory.add_weight_decay(model_without_ddp, args.weight_decay)
         param_groups_method_class = optim_factory.add_weight_decay(method_class, args.weight_decay)
-        # param_groups = param_groups_model + param_groups_method_class
-        param_groups = param_groups_method_class
+        param_groups = param_groups_model + param_groups_method_class
+        # param_groups = param_groups_method_class
         # print(param_groups_method_class)
         # print(param_groups)
         # exit(0)

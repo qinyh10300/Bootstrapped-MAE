@@ -59,8 +59,8 @@ def train_one_epoch(model: torch.nn.Module,
 
         if method_class is not None:
             # print("modify parameters of method_class")
-            # all_parameters = list(model.parameters()) + list(method_class.parameters())
-            all_parameters = list(method_class.parameters())
+            all_parameters = list(model.parameters()) + list(method_class.parameters())
+            # all_parameters = list(method_class.parameters())
             # print(all_parameters)
             # print(len(all_parameters), len(list(model.parameters())))
             # exit(0)
@@ -74,6 +74,7 @@ def train_one_epoch(model: torch.nn.Module,
         # method_class参数值没有梯度，但是model的参数值有梯度
         print("Gradients of method_class parameters:")
         for name, param in method_class.named_parameters():
+            # print(param.requires_grad)
             if param.grad is not None:
                 print(f"{name}: {param.grad}")
             else:
