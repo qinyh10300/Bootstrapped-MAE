@@ -207,12 +207,12 @@ class MaskedAutoencoderViT(nn.Module):
         # apply Transformer blocks
         if bootstrapping:
             if self.bootstrap_method == 'Last_layer':
-                for blk in self.decoder_blocks:
+                for blk in self.blocks:
                     x = blk(x)
             elif self.bootstrap_method == 'Fixed_layer_fusion':
                 assert method_class is not None, 'method_class must be specified for Fixed_layer_fusion'
                 layer_outputs = []
-                for index, blk in enumerate(self.decoder_blocks):
+                for index, blk in enumerate(self.blocks):
                     x = blk(x)
                     if (index + 1) in self.feature_layers:
                         layer_outputs.append(x)
@@ -222,7 +222,7 @@ class MaskedAutoencoderViT(nn.Module):
             elif self.bootstrap_method == 'Adaptive_layer_fusion':
                 assert method_class is not None, 'method_class must be specified for Adaptive_layer_fusion'
                 layer_outputs = []
-                for index, blk in enumerate(self.decoder_blocks):
+                for index, blk in enumerate(self.blocks):
                     x = blk(x)
                     if (index + 1) in self.feature_layers:
                         layer_outputs.append(x)

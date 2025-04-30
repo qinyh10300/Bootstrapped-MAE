@@ -197,16 +197,16 @@ def main(args):
             feature_layers=args.feature_layers,
             )
         
-        method_class_optimizer = None
+        method_class = None
         if args.bootstrap_method == 'Fixed_layer_fusion':
             assert len(args.feature_layers) == len(args.weights), "Length of feature layers and weights must be equal."
             method_class = FixedLayerFusion(args.weights)
         elif args.bootstrap_method == 'Adaptive_layer_fusion':
             method_class = AdaptiveLayerFusion(len(args.feature_layers))
-            method_class_optimizer = torch.optim.Adam(method_class.parameters(), lr=args.lr)
         elif args.bootstrap_method == 'Cross_layer_fusion':
             method_class = CrossLayerFusion(48, len(args.feature_layers))  # TODO: 48?
-            method_class_optimizer = torch.optim.Adam(method_class.parameters(), lr=args.lr)
+        elif args.bootstrap_method == 'Last_layer':
+            pass
         else:
             raise ValueError(f"Unknown bootstrap method: {args.bootstrap_method}")
     else:
@@ -233,9 +233,17 @@ def main(args):
         model_without_ddp = model.module
     
     # following timm: set wd as 0 for bias and norm layers
-    param_groups = optim_factory.add_weight_decay(model_without_ddp, args.weight_decay)
+    if method_class is not None:   # 如果 method_class 存在，将其参数加入优化器
+        param_groups_model = optim_factory.add_weight_decay(model_without_ddp, args.weight_decay)
+        param_groups_method_class = optim_factory.add_weight_decay(method_class, args.weight_decay)
+        param_groups = param_groups_model + param_groups_method_class
+        # print(param_groups_method_class)
+        # print(param_groups)
+        # exit(0)
+    else:
+        param_groups = optim_factory.add_weight_decay(model_without_ddp, args.weight_decay)
+
     optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
-    print(optimizer)
     loss_scaler = NativeScaler()
 
     misc.load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
@@ -269,7 +277,7 @@ def main(args):
             for epoch in range(current_bootstrap_step_epochs):
                 if args.distributed:
                     data_loader_train.sampler.set_epoch(epoch)
-                print((last_model==None))
+                # print((last_model==None))
                 train_stats = train_one_epoch(
                     model, data_loader_train,
                     optimizer, device, epoch, loss_scaler,
@@ -277,13 +285,12 @@ def main(args):
                     args=args,
                     last_model=last_model,
                     method_class=method_class,
-                    method_class_optimizer=method_class_optimizer,
                 )
                 if args.use_ema:
                     ema_model.update()
                     print("EMA model update")
 
-                if args.output_dir and epoch != 0 and (epoch % args.save_frequency == 0 or epoch + 1 == epochs_per_bootstrap):
+                if args.output_dir and epoch != 0 and (epoch % args.save_frequency == 0 or epoch + 1 == current_bootstrap_step_epochs):
                     if args.use_ema:
                         # Bmae with EMA
                         ema_model.apply_shadow()
@@ -335,6 +342,7 @@ def main(args):
                 last_model = copy.deepcopy(model)
 
             # last_model = None
+            # print(method_class.weights)   # 查看参数值是否会变化
 
             total_time = time.time() - start_time
             total_time_str = str(datetime.timedelta(seconds=int(total_time)))

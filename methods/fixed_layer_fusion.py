@@ -5,7 +5,7 @@ import torch.nn.functional as F
 class FixedLayerFusion(nn.Module):
     def __init__(self, weights):
         super(FixedLayerFusion, self).__init__()
-        self.weights = torch.tensor(weights)
+        self.weights = torch.tensor(weights, dtype=torch.float32)
 
     def forward(self, layer_outputs):
         normalized_weights = F.softmax(self.weights, dim=0) 
