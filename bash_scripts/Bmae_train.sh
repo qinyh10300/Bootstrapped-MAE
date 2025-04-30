@@ -18,6 +18,7 @@ EMA_DECAY=0.99
 DEVICE="cuda:0"
 USE_EMA=false  # 默认不使用 EMA
 CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
+SAVE_FREQUENCY=20
 
 # 解析命令行参数
 while [[ $# -gt 0 ]]; do
@@ -86,6 +87,10 @@ while [[ $# -gt 0 ]]; do
       CURRENT_DATETIME="$2"
       shift 2
       ;;
+    --save_frequency)
+      SAVE_FREQUENCY="$2"
+      shift 2
+      ;;
     *)
       echo "Unknown argument: $1"
       exit 1
@@ -120,6 +125,7 @@ echo "use_ema: ${USE_EMA}" >> ${PARAMS_FILE}
 echo "log_dir: ${LOG_DIR}" >> ${PARAMS_FILE}
 echo "output_dir: ${OUTPUT_DIR}" >> ${PARAMS_FILE}
 echo "current_datetime: ${CURRENT_DATETIME}" >> ${PARAMS_FILE}
+echo "save_frequency: ${SAVE_FREQUENCY}" >> ${PARAMS_FILE}
 
 # 执行 Python 脚本
 python main_pretrain.py \
@@ -142,4 +148,5 @@ python main_pretrain.py \
     $( [ "${USE_EMA}" = true ] && echo "--use_ema" ) \
     --ema_decay ${EMA_DECAY} \
     --device ${DEVICE} \
-    --current_datetime ${CURRENT_DATETIME}
+    --current_datetime ${CURRENT_DATETIME} \
+    --save_frequency ${SAVE_FREQUENCY}

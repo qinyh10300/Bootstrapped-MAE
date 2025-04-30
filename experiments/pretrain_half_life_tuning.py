@@ -28,7 +28,8 @@ def run_training(ema_decay):
         "--use_ema", 
         "--current_datetime", str(current_datetime),
         "--name", str(name),
-        "--device", "cuda:2",
+        "--device", "cuda:1",
+        "--save_frequency", "40"
     ]
     
     # Run the command and capture the output

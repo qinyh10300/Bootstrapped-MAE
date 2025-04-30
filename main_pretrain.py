@@ -122,6 +122,9 @@ def get_args_parser():
     parser.add_argument('--ema_decay', default=0.99, type=float)
     # parser.add_argument('--ema_lr_decay', default=0.1, type=float)
 
+    # checkpoint saving parameters
+    parser.add_argument('--save_frequency', default=20, type=int)
+
     return parser
 
 
@@ -259,7 +262,7 @@ def main(args):
                     ema_model.update()
                     print("EMA model update")
 
-                if args.output_dir and (epoch % 20 == 0 or epoch + 1 == epochs_per_bootstrap):
+                if args.output_dir and (epoch % args.save_frequency == 0 or epoch + 1 == epochs_per_bootstrap):
                     if args.use_ema:
                         # Bmae with EMA
                         ema_model.apply_shadow()
@@ -279,7 +282,8 @@ def main(args):
                                 'bootstrap_iter': bootstrap_iter + 1,}
                 else:
                     log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
-                                'epoch': epoch,}
+                                'epoch': epoch,
+                                'bootstrap_iter': bootstrap_iter + 1,}
 
                 if args.output_dir and misc.is_main_process():
                     if log_writer is not None:
@@ -331,7 +335,7 @@ def main(args):
                 log_writer=log_writer,
                 args=args
             )
-            if args.output_dir and (epoch % 20 == 0 or epoch + 1 == args.epochs):
+            if args.output_dir and (epoch % args.save_frequency == 0 or epoch + 1 == args.epochs):
                 misc.save_model(
                     args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
                     loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"{args.name}")
