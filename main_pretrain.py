@@ -244,8 +244,9 @@ def main(args):
     if method_class is not None:   # 如果 method_class 存在，将其参数加入优化器
         param_groups_model = optim_factory.add_weight_decay(model_without_ddp, args.weight_decay)
         param_groups_method_class = optim_factory.add_weight_decay(method_class, args.weight_decay)
-        param_groups = param_groups_model + param_groups_method_class
-        print(param_groups_method_class)
+        # param_groups = param_groups_model + param_groups_method_class
+        param_groups = param_groups_method_class
+        # print(param_groups_method_class)
         # print(param_groups)
         # exit(0)
     else:
@@ -253,6 +254,28 @@ def main(args):
 
     optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
     loss_scaler = NativeScaler()
+
+    # # 打印优化器中每个参数的名称和形状（包括 method_class）
+    # for group in optimizer.param_groups:
+    #     for param in group['params']:
+    #         found = False
+    #         # 检查 model 的参数
+    #         for name, model_param in model.named_parameters():
+    #             if param is model_param:
+    #                 print(f"Parameter name: {name}, shape: {param.shape}")
+    #                 found = True
+    #                 break
+    #         # 检查 method_class 的参数
+    #         if not found and method_class is not None:
+    #             for name, method_param in method_class.named_parameters():
+    #                 if param is method_param:
+    #                     print(f"Parameter name: method_class.{name}, shape: {param.shape}")
+    #                     found = True
+    #                     break
+    #         # 如果没有找到名称
+    #         if not found:
+    #             print(f"Unnamed parameter, shape: {param.shape}")
+    # exit(0)
 
     misc.load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
     
@@ -365,10 +388,11 @@ def main(args):
                 last_model = copy.deepcopy(model)
 
             # last_model = None
-            # print(method_class.weights)   # 查看参数值是否会变化
             if args.bootstrap_method == 'Cross_layer_fusion':
                 print(method_class.fc.weight[0][0].item())
                 print(method_class.fc.bias[0].item())
+            elif args.bootstrap_method == 'Adaptive_layer_fusion':
+                print(method_class.weights)   # 查看参数值是否会变化
 
             total_time = time.time() - start_time
             total_time_str = str(datetime.timedelta(seconds=int(total_time)))

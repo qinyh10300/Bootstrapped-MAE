@@ -229,6 +229,17 @@ class MaskedAutoencoderViT(nn.Module):
                 x = method_class(layer_outputs)
             elif self.bootstrap_method == 'Cross_layer_fusion':
                 assert method_class is not None, 'method_class must be specified for Cross_layer_fusion'
+                # print("Cross_layer_fusion")
+                layer_outputs = []
+                for index, blk in enumerate(self.blocks):
+                    x = blk(x)
+                    # print(x.shape)
+                    if (index + 1) in self.feature_layers:
+                        layer_outputs.append(x)
+                x = method_class(layer_outputs)
+            elif self.bootstrap_method == 'Gated_fusion_dynamic':
+                assert method_class is not None, 'method_class must be specified for Gated_fusion_dynamic'
+                # print("Gated_fusion_dynamic")
                 layer_outputs = []
                 for index, blk in enumerate(self.blocks):
                     x = blk(x)

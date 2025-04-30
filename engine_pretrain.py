@@ -56,14 +56,29 @@ def train_one_epoch(model: torch.nn.Module,
             sys.exit(1)
 
         loss /= accum_iter
+
         if method_class is not None:
             # print("modify parameters of method_class")
-            all_parameters = list(model.parameters()) + list(method_class.parameters())
-            loss_scaler(loss, optimizer, parameters=all_parameters,
-                        update_grad=(data_iter_step + 1) % accum_iter == 0)
+            # all_parameters = list(model.parameters()) + list(method_class.parameters())
+            all_parameters = list(method_class.parameters())
+            # print(all_parameters)
+            # print(len(all_parameters), len(list(model.parameters())))
+            # exit(0)
+            if last_model is not None:
+                loss_scaler(loss, optimizer, parameters=all_parameters,
+                            update_grad=(data_iter_step + 1) % accum_iter == 0)
         else:
             loss_scaler(loss, optimizer, parameters=list(model.parameters()),
                         update_grad=(data_iter_step + 1) % accum_iter == 0)
+            
+        # method_class参数值没有梯度，但是model的参数值有梯度
+        print("Gradients of method_class parameters:")
+        for name, param in method_class.named_parameters():
+            if param.grad is not None:
+                print(f"{name}: {param.grad}")
+            else:
+                print(f"{name}: No gradient")
+                
         if (data_iter_step + 1) % accum_iter == 0:
             optimizer.zero_grad()
 
