@@ -366,8 +366,9 @@ def main(args):
 
             # last_model = None
             # print(method_class.weights)   # 查看参数值是否会变化
-            # print(method_class.fc.weight[0][0].item())
-            # print(method_class.fc.bias[0].item())
+            if args.bootstrap_method == 'Cross_layer_fusion':
+                print(method_class.fc.weight[0][0].item())
+                print(method_class.fc.bias[0].item())
 
             total_time = time.time() - start_time
             total_time_str = str(datetime.timedelta(seconds=int(total_time)))
