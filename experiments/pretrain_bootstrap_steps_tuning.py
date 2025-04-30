@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 # Define the hyperparameters to explore
-BOOTSTRAP_STEPS = [7,8,9]
+BOOTSTRAP_STEPS = [100, 150, 200]
 USE_EMA = [True, False]
 
 # Output log file

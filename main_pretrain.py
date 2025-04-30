@@ -298,19 +298,34 @@ def main(args):
                     ema_model.update()
                     print("EMA model update")
 
-                if args.output_dir and epoch != 0 and (epoch % args.save_frequency == 0 or epoch + 1 == current_bootstrap_step_epochs):
-                    if args.use_ema:
-                        # Bmae with EMA
-                        ema_model.apply_shadow()
-                        misc.save_model(
-                            args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                            loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-ema-{bootstrap_iter + 1}")
-                        ema_model.restore()
-                    else:
-                        # original Bmae
-                        misc.save_model(
-                            args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                            loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1}")
+                if args.bootstrap_steps > 50:   # 对于bootstrap_steps很大的情况
+                    if args.output_dir and (bootstrap_iter + 1) % 20 == 0 and epoch + 1 == current_bootstrap_step_epochs:
+                        if args.use_ema:
+                            # Bmae with EMA
+                            ema_model.apply_shadow()
+                            misc.save_model(
+                                args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                                loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-ema-{bootstrap_iter + 1}")
+                            ema_model.restore()
+                        else:
+                            # original Bmae
+                            misc.save_model(
+                                args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                                loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1}")
+                else:
+                    if args.output_dir and epoch != 0 and (epoch % args.save_frequency == 0 or epoch + 1 == current_bootstrap_step_epochs):
+                        if args.use_ema:
+                            # Bmae with EMA
+                            ema_model.apply_shadow()
+                            misc.save_model(
+                                args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                                loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-ema-{bootstrap_iter + 1}")
+                            ema_model.restore()
+                        else:
+                            # original Bmae
+                            misc.save_model(
+                                args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                                loss_scaler=loss_scaler, epoch=epoch, checkpoint_name=f"Bmae-{bootstrap_iter + 1}")
 
                 if args.use_ema:
                     log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
