@@ -204,7 +204,9 @@ def main(args):
         elif args.bootstrap_method == 'Adaptive_layer_fusion':
             method_class = AdaptiveLayerFusion(len(args.feature_layers))
         elif args.bootstrap_method == 'Cross_layer_fusion':
-            method_class = CrossLayerFusion(48, len(args.feature_layers))  # TODO: 48?
+            seq_len = 64 + 1   # 多一个cls_token
+            seq_len += 1   # 使用deit，多一个distill_token
+            method_class = CrossLayerFusion(seq_len, len(args.feature_layers)).to(device)
         elif args.bootstrap_method == 'Last_layer':
             pass
         else:
@@ -237,7 +239,7 @@ def main(args):
         param_groups_model = optim_factory.add_weight_decay(model_without_ddp, args.weight_decay)
         param_groups_method_class = optim_factory.add_weight_decay(method_class, args.weight_decay)
         param_groups = param_groups_model + param_groups_method_class
-        # print(param_groups_method_class)
+        print(param_groups_method_class)
         # print(param_groups)
         # exit(0)
     else:
@@ -343,6 +345,8 @@ def main(args):
 
             # last_model = None
             # print(method_class.weights)   # 查看参数值是否会变化
+            print(method_class.fc.weight)
+            print(method_class.fc.bias)
 
             total_time = time.time() - start_time
             total_time_str = str(datetime.timedelta(seconds=int(total_time)))
