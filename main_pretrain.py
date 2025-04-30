@@ -209,6 +209,10 @@ def main(args):
             method_class = CrossLayerFusion(seq_len, len(args.feature_layers)).to(device)
         elif args.bootstrap_method == 'Last_layer':
             pass
+        elif args.bootstrap_method == 'Gated_fusion_dynamic':
+            seq_len = 64 + 1   # 多一个cls_token
+            seq_len += 1   # 使用deit，多一个distill_token
+            method_class = GatedFusionDynamic(seq_len, len(args.feature_layers)).to(device)
         else:
             raise ValueError(f"Unknown bootstrap method: {args.bootstrap_method}")
     else:
@@ -345,8 +349,8 @@ def main(args):
 
             # last_model = None
             # print(method_class.weights)   # 查看参数值是否会变化
-            print(method_class.fc.weight)
-            print(method_class.fc.bias)
+            print(method_class.fc.weight[0][0].item())
+            print(method_class.fc.bias[0].item())
 
             total_time = time.time() - start_time
             total_time_str = str(datetime.timedelta(seconds=int(total_time)))
