@@ -38,9 +38,9 @@ class MaskedAutoencoderViT(nn.Module):
         self.num_patches = num_patches
 
         if is_bootstrapping:
-            assert bootstrap_method in ['Last_layer', 'Hierarchical Fixed Weighting', 'Hierarchical Adaptive Weighting', \
+            assert bootstrap_method in ['Last_layer', 'Fixed_layer_fusion', 'Adaptive_layer_fusion', \
                                         'Cross-layer Self-attention', 'Cross-layer Concatenation and Projection'], \
-                    'bootstrap_method must be one of [Last_layer, Hierarchical Fixed Weighting, Hierarchical Adaptive Weighting, \
+                    'bootstrap_method must be one of [Last_layer, Fixed_layer_fusion, Adaptive_layer_fusion, \
                     Cross-layer Self-attention, Cross-layer Concatenation and Projection]'
             print(bootstrap_method)
             if bootstrap_method != 'Last_layer':
@@ -175,7 +175,7 @@ class MaskedAutoencoderViT(nn.Module):
 
         return x_masked, mask, ids_restore
 
-    def forward_encoder(self, x, mask_ratio):
+    def forward_encoder(self, x, mask_ratio, bootstrapping = False, method_class = None):
         # embed patches
         x = self.patch_embed(x)
 
@@ -205,20 +205,33 @@ class MaskedAutoencoderViT(nn.Module):
             x = torch.cat((cls_tokens, x), dim=1)
 
         # apply Transformer blocks
-        for blk in self.blocks:
-            x = blk(x)
-
-        # if self.bootstrap_method == 'Last_layer':
-        #     for blk in self.decoder_blocks:
-        #         x = blk(x)
-        # elif self.bootstrap_method == 'Hierarchical Fixed Weighting':
-        #     for index, blk in enumerate(self.decoder_blocks):
-        #         x = blk(x)
-        #         if (index + 1) in self.feature_layers:
-        #             features += x
-        #     x = features / len(self.feature_layers)   # 相当于均匀分配各层之间的权重
-        # else:
-        #     raise NotImplementedError('bootstrap_method must be one of [Last_layer, Hierarchical]')
+        if bootstrapping:
+            if self.bootstrap_method == 'Last_layer':
+                for blk in self.decoder_blocks:
+                    x = blk(x)
+            elif self.bootstrap_method == 'Fixed_layer_fusion':
+                assert method_class is not None, 'method_class must be specified for Fixed_layer_fusion'
+                layer_outputs = []
+                for index, blk in enumerate(self.decoder_blocks):
+                    x = blk(x)
+                    if (index + 1) in self.feature_layers:
+                        layer_outputs.append(x)
+                        # features += x
+                # x = features / len(self.feature_layers)   # 相当于均匀分配各层之间的权重
+                x = method_class(layer_outputs)
+            elif self.bootstrap_method == 'Adaptive_layer_fusion':
+                assert method_class is not None, 'method_class must be specified for Adaptive_layer_fusion'
+                layer_outputs = []
+                for index, blk in enumerate(self.decoder_blocks):
+                    x = blk(x)
+                    if (index + 1) in self.feature_layers:
+                        layer_outputs.append(x)
+                x = method_class(layer_outputs)
+            else:
+                raise NotImplementedError('bootstrap_method must be one of [Last_layer, Hierarchical]')
+        else:
+            for blk in self.blocks:
+                x = blk(x)
         
         x = self.norm(x)
 
@@ -262,7 +275,7 @@ class MaskedAutoencoderViT(nn.Module):
 
         return x
 
-    def forward_loss(self, imgs, pred, mask, last_model=None):
+    def forward_loss(self, imgs, pred, mask, last_model=None, method_class=None):
         """
         imgs: [N, 3, H, W]
         pred: [N, L, p*p*3]
@@ -272,14 +285,14 @@ class MaskedAutoencoderViT(nn.Module):
         if self.is_bootstrapping and last_model is not None:
             # print("Bootstrapping")
             with torch.no_grad():
-                target, _, _ = last_model.forward_encoder(imgs, mask_ratio=0.0)
+                target, _, _ = last_model.forward_encoder(imgs, mask_ratio=0.0, bootstrapping=True, method_class=method_class)
                 
                 if self.is_distill_token:
                     target = nn.functional.normalize(target[:, 1:-1, :], dim=-1)
                 else:
                     target = nn.functional.normalize(target[:, 1:, :], dim=-1)
 
-            pred, _, _ = last_model.forward_encoder(self.unpatchify(pred), mask_ratio=0.0)
+            pred, _, _ = last_model.forward_encoder(self.unpatchify(pred), mask_ratio=0.0, bootstrapping=True, method_class=method_class)
             if self.is_distill_token:
                 pred = nn.functional.normalize(pred[:, 1:-1, :], dim=-1)
             else:
@@ -304,10 +317,10 @@ class MaskedAutoencoderViT(nn.Module):
             loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
             return loss
 
-    def forward(self, imgs, mask_ratio=0.75, last_model=None):
+    def forward(self, imgs, mask_ratio=0.75, last_model=None, method_class = None):
         latent, mask, ids_restore = self.forward_encoder(imgs, mask_ratio)
         pred = self.forward_decoder(latent, ids_restore)  # [N, L, p*p*3]
-        loss = self.forward_loss(imgs, pred, mask, last_model)
+        loss = self.forward_loss(imgs, pred, mask, last_model, method_class)
         return loss, pred, mask
 
 

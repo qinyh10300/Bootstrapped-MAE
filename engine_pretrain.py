@@ -23,7 +23,9 @@ def train_one_epoch(model: torch.nn.Module,
                     device: torch.device, epoch: int, loss_scaler,
                     log_writer=None,
                     args=None,
-                    last_model=None,):
+                    last_model=None,
+                    method_class=None,
+                    method_class_optimizer=None):
     model.train(True)
     metric_logger = misc.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', misc.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -46,7 +48,7 @@ def train_one_epoch(model: torch.nn.Module,
         samples = samples.to(device, non_blocking=True)
 
         with torch.cuda.amp.autocast():
-            loss, _, _ = model(samples, mask_ratio=args.mask_ratio, last_model=last_model)
+            loss, _, _ = model(samples, mask_ratio=args.mask_ratio, last_model=last_model, method_class=method_class)
 
         loss_value = loss.item()
 
@@ -59,6 +61,14 @@ def train_one_epoch(model: torch.nn.Module,
                     update_grad=(data_iter_step + 1) % accum_iter == 0)
         if (data_iter_step + 1) % accum_iter == 0:
             optimizer.zero_grad()
+
+        # print("111", method_class, last_model, method_class_optimizer)
+        if method_class is not None and last_model is not None and method_class_optimizer is not None:
+            # 如果 method_class 和 last_model 都不为 None，则更新 method_class 的参数
+            print("Updating method_class parameters")
+            method_class_optimizer.zero_grad()
+            loss.backward()  # 计算 method_class 的梯度
+            method_class_optimizer.step()  # 更新 method_class 的参数
 
         torch.cuda.synchronize()
 

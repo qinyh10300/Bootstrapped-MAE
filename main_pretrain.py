@@ -36,6 +36,7 @@ from engine_pretrain import train_one_epoch
 
 import copy
 from util.ema import EMA
+from methods import *
 
 def get_args_parser():
     parser = argparse.ArgumentParser('MAE pre-training', add_help=False)
@@ -114,7 +115,11 @@ def get_args_parser():
     parser.add_argument('--is_bootstrapping', action='store_true')
     parser.set_defaults(is_bootstrapping=False)
     parser.add_argument('--bootstrap_steps', default=5, type=int)
-    parser.add_argument('--bootstrap_method', default='last_layer', type=str)
+    parser.add_argument('--bootstrap_method', default='Last_layer', type=str)
+    parser.add_argument('--feature_layers', default=[1, 6, 12], type=int, nargs='+',
+                        help='List of feature layers (e.g., 1 6 12)')
+    parser.add_argument('--weights', default=[1, 1, 1], type=float, nargs='+',
+                        help='List of weights (e.g., 1 6 12)')
 
     # ema parameters
     parser.add_argument('--use_ema', action='store_true')
@@ -178,13 +183,32 @@ def main(args):
         drop_last=True,
     )
     
+    eff_batch_size = args.batch_size * args.accum_iter * misc.get_world_size()
+    
+    if args.lr is None:  # only base_lr is specified
+        args.lr = args.blr * eff_batch_size / 256
+
     # TODO: define the model
     if args.is_bootstrapping:
         model = models_mae.__dict__[args.model](
             norm_pix_loss=args.norm_pix_loss,
             is_bootstrapping=args.is_bootstrapping,
             bootstrap_method=args.bootstrap_method,
+            feature_layers=args.feature_layers,
             )
+        
+        method_class_optimizer = None
+        if args.bootstrap_method == 'Fixed_layer_fusion':
+            assert len(args.feature_layers) == len(args.weights), "Length of feature layers and weights must be equal."
+            method_class = FixedLayerFusion(args.weights)
+        elif args.bootstrap_method == 'Adaptive_layer_fusion':
+            method_class = AdaptiveLayerFusion(len(args.feature_layers))
+            method_class_optimizer = torch.optim.Adam(method_class.parameters(), lr=args.lr)
+        elif args.bootstrap_method == 'Cross_layer_fusion':
+            method_class = CrossLayerFusion(48, len(args.feature_layers))  # TODO: 48?
+            method_class_optimizer = torch.optim.Adam(method_class.parameters(), lr=args.lr)
+        else:
+            raise ValueError(f"Unknown bootstrap method: {args.bootstrap_method}")
     else:
         model = models_mae.__dict__[args.model](norm_pix_loss=args.norm_pix_loss)
 
@@ -197,11 +221,6 @@ def main(args):
 
     model_without_ddp = model
     print("Model = %s" % str(model_without_ddp))
-
-    eff_batch_size = args.batch_size * args.accum_iter * misc.get_world_size()
-    
-    if args.lr is None:  # only base_lr is specified
-        args.lr = args.blr * eff_batch_size / 256
 
     print("base lr: %.2e" % (args.lr * 256 / eff_batch_size))
     print("actual lr: %.2e" % args.lr)
@@ -257,6 +276,8 @@ def main(args):
                     log_writer=log_writer,
                     args=args,
                     last_model=last_model,
+                    method_class=method_class,
+                    method_class_optimizer=method_class_optimizer,
                 )
                 if args.use_ema:
                     ema_model.update()
