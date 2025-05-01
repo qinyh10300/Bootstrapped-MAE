@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 # Define the hyperparameters to explore
-BOOTSTRAP_STEPS = [100, 150, 200]
+BOOTSTRAP_STEPS = [150, 200]
 USE_EMA = [True, False]
 
 # Output log file
@@ -81,6 +81,8 @@ with open(log_file, "a") as log:
 
     for bootstrap_steps in BOOTSTRAP_STEPS:
         for use_ema in USE_EMA:
+            if bootstrap_steps == 150 and use_ema == True:
+                continue
             print(f"Running training with BOOTSTRAP_STEPS={bootstrap_steps}, USE_EMA={use_ema}")
             
             train_loss = run_training(bootstrap_steps, use_ema)

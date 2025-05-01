@@ -36,7 +36,7 @@ def train_one_epoch(model: torch.nn.Module,
     accum_iter = args.accum_iter
 
     optimizer.zero_grad()
-    if method_class is not None and last_model is not None:
+    if method_class is not None and last_model is not None and optimizer_method_class is not None:
         optimizer_method_class.zero_grad()
 
     if log_writer is not None:
@@ -47,7 +47,7 @@ def train_one_epoch(model: torch.nn.Module,
         # we use a per iteration (instead of per epoch) lr scheduler
         if data_iter_step % accum_iter == 0:
             lr_sched.adjust_learning_rate(optimizer, data_iter_step / len(data_loader) + epoch, args)
-            if method_class is not None and last_model is not None:
+            if method_class is not None and last_model is not None and optimizer_method_class is not None:
                 lr_sched.adjust_learning_rate(optimizer_method_class, data_iter_step / len(data_loader) + epoch, args)
 
         samples = samples.to(device, non_blocking=True)
@@ -64,7 +64,7 @@ def train_one_epoch(model: torch.nn.Module,
         loss /= accum_iter
         
         # 更新 method_class 的参数
-        if method_class is not None and last_model is not None:
+        if method_class is not None and last_model is not None and optimizer_method_class is not None:
             loss_scaler(loss, optimizer, parameters=list(model.parameters()),
                         update_grad=(data_iter_step + 1) % accum_iter == 0)
             optimizer_method_class.step()
@@ -82,7 +82,7 @@ def train_one_epoch(model: torch.nn.Module,
                         update_grad=(data_iter_step + 1) % accum_iter == 0)
                 
         if (data_iter_step + 1) % accum_iter == 0:
-            if method_class is not None and last_model is not None:
+            if method_class is not None and last_model is not None and optimizer_method_class is not None:
                 optimizer_method_class.zero_grad()
             optimizer.zero_grad()
 

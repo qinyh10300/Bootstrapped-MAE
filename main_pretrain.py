@@ -265,13 +265,13 @@ def main(args):
         optimizer_method_class = torch.optim.AdamW(param_groups_method_class, lr=args.lr, betas=(0.9, 0.95))
         if args.optim == "AdamW":
             # 使用 AdamW 优化器
-            optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
+            optimizer = torch.optim.AdamW(param_groups_model, lr=args.lr, betas=(0.9, 0.95))
         elif args.optim == "SGD":
             # 使用 SGD 优化器
-            optimizer = torch.optim.SGD(param_groups, lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
+            optimizer = torch.optim.SGD(param_groups_model, lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
         elif args.optim == "RMSprop":
             # 使用 RMSprop 优化器
-            optimizer = torch.optim.RMSprop(param_groups, lr=args.lr, alpha=0.99, weight_decay=args.weight_decay)
+            optimizer = torch.optim.RMSprop(param_groups_model, lr=args.lr, alpha=0.99, weight_decay=args.weight_decay)
         else:
             raise NotImplementedError(f"Unknown optimizer: {args.optim}")
     else:

@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 # Define the hyperparameters to explore
-METHOD = ['Last_layer', 'Fixed_layer_fusion', 'Adaptive_layer_fusion', 'Cross_layer_fusion', \
+METHOD = ['Fixed_layer_fusion', 'Adaptive_layer_fusion', 'Cross_layer_fusion', \
           'Gated_fusion_dynamic', 'Cross_layer_self_attention', 'Cross_layer_cross_attention']
 
 # Output log file
