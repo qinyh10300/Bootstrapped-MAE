@@ -4,9 +4,9 @@ import os
 from datetime import datetime
 
 # Define the hyperparameters to explore
-ACCUM_VALUES = [2]
+ACCUM_VALUES = [1, 2, 4]
 WARMUP_EPOCHS_VALUES = [10]
-BASE_LR_VALUES = [1e-4, 5e-4, 1e-3]
+BASE_LR_VALUES = [5e-4]
 
 # Output log file
 log_file = "./experiments/hyperparam_results/pretrain_lr_tuning.log"

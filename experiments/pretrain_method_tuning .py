@@ -4,36 +4,34 @@ import os
 from datetime import datetime
 
 # Define the hyperparameters to explore
-ACCUM_VALUES = [2]
-WARMUP_EPOCHS_VALUES = [10]
-BASE_LR_VALUES = [1e-4, 5e-4, 1e-3]
+METHOD = ['Last_layer', 'Fixed_layer_fusion', 'Adaptive_layer_fusion', 'Cross_layer_fusion', \
+          'Gated_fusion_dynamic', 'Cross_layer_self_attention', 'Cross_layer_cross_attention']
 
 # Output log file
-log_file = "./experiments/hyperparam_results/pretrain_lr_tuning.log"
+log_file = "./experiments/hyperparam_results/pretrain_method_tuning.log"
 
 # # Make sure to clear the log file before starting
 # if os.path.exists(log_file):
 #     assert os.path.getsize(log_file) == 0, f"Log file {log_file} is not empty. Please clear it before running the script."
 
 # Function to run the training process and capture the last line from log.txt
-def run_training(accum, warmup_epochs, base_lr):
+def run_training(method):
     # Define the output directory based on the hyperparameters
     current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # 获取当前时间并格式化为字符串
     print("current_datetime:", current_datetime)
-    name = f"Bmae_deit_pretrain_pretrain_accum_{accum}_warmup_{warmup_epochs}_base_lr_{base_lr}"
+    name = f"Bmae_deit_pretrain_pretrain_method_{method}"
     output_dir = f"./ckpts/{name}/{current_datetime}"
     
     # Run the training script using subprocess
     command = [
         "bash", "bash_scripts/Bmae_train.sh", 
-        "--accum_iter", str(accum), 
-        "--warmup_epochs", str(warmup_epochs), 
-        "--blr", str(base_lr), 
+        "--bootstrap_method", str(method),
         "--current_datetime", str(current_datetime),
         "--name", str(name),
         "--device", "cuda:0",
         "--use_ema",
-        "--save_frequency", "200"
+        "--save_frequency", "200",
+        "--bootstrap_steps", "200",
     ]
     
     # Run the command and capture the output
@@ -50,7 +48,7 @@ def run_training(accum, warmup_epochs, base_lr):
     
     # Check if the process ran successfully
     if process.returncode != 0:
-        print(f"Error occurred with parameters: ACCUM={accum}, WARMUP_EPOCHS={warmup_epochs}, BASE_LR={base_lr}")
+        print(f"Error occurred with parameters: METHOD={method}")
         return None
     
     # Read the last line from the log file
@@ -77,25 +75,23 @@ if not os.path.exists(log_dir):
 with open(log_file, "a") as log:
     log_current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # 获取当前时间并格式化为字符串
     log.write(f"\n\n*****************************************************************\n")
-    log.write(f"Start logging pretrain lr tuning, at {log_current_datetime}\n")
-    print(f"Start logging pretrain lr tuning, at {log_current_datetime}")
+    log.write(f"Start logging pretrain method tuning, at {log_current_datetime}\n")
+    print(f"Start logging pretrain method tuning, at {log_current_datetime}")
 
     # Iterate over all combinations of hyperparameters
-    for accum in ACCUM_VALUES:
-        for warmup_epochs in WARMUP_EPOCHS_VALUES:
-            for base_lr in BASE_LR_VALUES:
-                print(f"Running training with ACCUM={accum}, WARMUP_EPOCHS={warmup_epochs}, BASE_LR={base_lr}")
-                
-                # Run training and capture the last line's training loss
-                train_loss = run_training(accum, warmup_epochs, base_lr)
-                
-                if train_loss is not None:
-                    log.write(f"ACCUM={accum}, WARMUP_EPOCHS={warmup_epochs}, BASE_LR={base_lr}, TRAIN_LOSS={train_loss}\n")
-                    print(f"Finished: ACCUM={accum}, WARMUP_EPOCHS={warmup_epochs}, BASE_LR={base_lr}, TRAIN_LOSS={train_loss}")
-                else:
-                    log.write(f"ERROR: ACCUM={accum}, WARMUP_EPOCHS={warmup_epochs}, BASE_LR={base_lr}, STATUS=FAILED\n")
-                    print(f"Error with: ACCUM={accum}, WARMUP_EPOCHS={warmup_epochs}, BASE_LR={base_lr}. Marking as FAILED.")
+    for method in METHOD:
+        print(f"Running training with METHOD={method}")
+        
+        # Run training and capture the last line's training loss
+        train_loss = run_training(method)
+        
+        if train_loss is not None:
+            log.write(f"METHOD={method}, TRAIN_LOSS={train_loss}\n")
+            print(f"Finished: METHOD={method}, TRAIN_LOSS={train_loss}")
+        else:
+            log.write(f"ERROR: METHOD={method}, STATUS=FAILED\n")
+            print(f"Error with: METHOD={method}. Marking as FAILED.")
 
-    log.write(f"Finish logging pretrain lr tuning, at {log_current_datetime}\n")
+    log.write(f"Finish logging pretrain method tuning, at {log_current_datetime}\n")
     log.write(f"*****************************************************************\n\n")
-    print(f"Finish logging pretrain lr tuning, at {log_current_datetime}")
+    print(f"Finish logging pretrain method tuning, at {log_current_datetime}")

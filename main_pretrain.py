@@ -76,6 +76,8 @@ def get_args_parser():
 
     parser.add_argument('--warmup_epochs', type=int, default=40, metavar='N',
                         help='epochs to warmup LR')
+                        
+    parser.add_argument('--optim', default='AdamW', type=str)
 
     # Dataset parameters
     parser.add_argument('--data_path', default='/datasets01/imagenet_full_size/061417/', type=str,
@@ -256,15 +258,35 @@ def main(args):
     # loss_scaler = NativeScaler()
 
     optimizer_method_class = None
-    if method_class is not None:
+    if method_class is not None and not isinstance(method_class, FixedLayerFusion):
         param_groups_model = optim_factory.add_weight_decay(model_without_ddp, args.weight_decay)
         param_groups_method_class = optim_factory.add_weight_decay(method_class, args.weight_decay)
 
-        optimizer = torch.optim.AdamW(param_groups_model, lr=args.lr, betas=(0.9, 0.95))
         optimizer_method_class = torch.optim.AdamW(param_groups_method_class, lr=args.lr, betas=(0.9, 0.95))
+        if args.optim == "AdamW":
+            # 使用 AdamW 优化器
+            optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
+        elif args.optim == "SGD":
+            # 使用 SGD 优化器
+            optimizer = torch.optim.SGD(param_groups, lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
+        elif args.optim == "RMSprop":
+            # 使用 RMSprop 优化器
+            optimizer = torch.optim.RMSprop(param_groups, lr=args.lr, alpha=0.99, weight_decay=args.weight_decay)
+        else:
+            raise NotImplementedError(f"Unknown optimizer: {args.optim}")
     else:
         param_groups = optim_factory.add_weight_decay(model_without_ddp, args.weight_decay)
-        optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
+        if args.optim == "AdamW":
+            # 使用 AdamW 优化器
+            optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
+        elif args.optim == "SGD":
+            # 使用 SGD 优化器
+            optimizer = torch.optim.SGD(param_groups, lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
+        elif args.optim == "RMSprop":
+            # 使用 RMSprop 优化器
+            optimizer = torch.optim.RMSprop(param_groups, lr=args.lr, alpha=0.99, weight_decay=args.weight_decay)
+        else:
+            raise NotImplementedError(f"Unknown optimizer: {args.optim}")
 
     loss_scaler = NativeScaler()
 
@@ -304,7 +326,7 @@ def main(args):
                     print("EMA model update")
 
                 if args.bootstrap_steps > 50:   # 对于bootstrap_steps很大的情况
-                    if args.output_dir and (bootstrap_iter + 1) % 20 == 0 and epoch + 1 == current_bootstrap_step_epochs:
+                    if args.output_dir and bootstrap_iter >= args.bootstrap_steps-6 and epoch + 1 == current_bootstrap_step_epochs:
                         if args.use_ema:
                             # Bmae with EMA
                             ema_model.apply_shadow()

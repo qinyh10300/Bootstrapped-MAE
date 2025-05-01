@@ -19,6 +19,8 @@ DEVICE="cuda:0"
 USE_EMA=false  # 默认不使用 EMA
 CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
 SAVE_FREQUENCY=20
+NORM_PIX_LOSS=true  # 默认不使用 norm_pix_loss
+OPTIM='AdamW'
 
 # 解析命令行参数
 while [[ $# -gt 0 ]]; do
@@ -91,6 +93,14 @@ while [[ $# -gt 0 ]]; do
       SAVE_FREQUENCY="$2"
       shift 2
       ;;
+    --norm_pix_loss)
+      NORM_PIX_LOSS=true  # 如果传入 --use_ema，则启用 EMA
+      shift 1
+      ;;
+    --optim)
+      OPTIM="$2"
+      shift 2
+      ;;
     *)
       echo "Unknown argument: $1"
       exit 1
@@ -126,6 +136,8 @@ echo "log_dir: ${LOG_DIR}" >> ${PARAMS_FILE}
 echo "output_dir: ${OUTPUT_DIR}" >> ${PARAMS_FILE}
 echo "current_datetime: ${CURRENT_DATETIME}" >> ${PARAMS_FILE}
 echo "save_frequency: ${SAVE_FREQUENCY}" >> ${PARAMS_FILE}
+echo "norm_pix_loss: ${NORM_PIX_LOSS}" >> ${PARAMS_FILE}
+echo "optim: ${OPTIM}" >> ${PARAMS_FILE}
 
 # 执行 Python 脚本
 python main_pretrain.py \
@@ -140,7 +152,7 @@ python main_pretrain.py \
     --blr ${BASE_LR} \
     --input_size ${INPUT_SIZE} \
     --mask_ratio ${MASK_RATIO} \
-    --norm_pix_loss \
+    $( [ "${NORM_PIX_LOSS}" = true ] && echo "--norm_pix_loss" ) \
     --log_dir ${LOG_DIR} \
     --is_bootstrapping \
     --bootstrap_steps ${BOOTSTRAP_STEPS} \
@@ -149,4 +161,5 @@ python main_pretrain.py \
     --ema_decay ${EMA_DECAY} \
     --device ${DEVICE} \
     --current_datetime ${CURRENT_DATETIME} \
-    --save_frequency ${SAVE_FREQUENCY}
+    --save_frequency ${SAVE_FREQUENCY} \
+    --optim ${OPTIM} \
