@@ -116,9 +116,9 @@ def get_args_parser():
     parser.set_defaults(is_bootstrapping=False)
     parser.add_argument('--bootstrap_steps', default=5, type=int)
     parser.add_argument('--bootstrap_method', default='Last_layer', type=str)
-    parser.add_argument('--feature_layers', default=[12], type=int, nargs='+',
+    parser.add_argument('--feature_layers', default=[1, 6, 12], type=int, nargs='+',
                         help='List of feature layers (e.g., 1 6 12)')
-    parser.add_argument('--weights', default=[1], type=float, nargs='+',
+    parser.add_argument('--weights', default=[1, 1, 1], type=float, nargs='+',
                         help='List of weights (e.g., 1 6 12)')
 
     # ema parameters
@@ -240,47 +240,37 @@ def main(args):
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
         model_without_ddp = model.module
     
-    # following timm: set wd as 0 for bias and norm layers
-    if method_class is not None:   # 如果 method_class 存在，将其参数加入优化器
+    # # following timm: set wd as 0 for bias and norm layers
+    # if method_class is not None:   # 如果 method_class 存在，将其参数加入优化器
+    #     param_groups_model = optim_factory.add_weight_decay(model_without_ddp, args.weight_decay)
+    #     param_groups_method_class = optim_factory.add_weight_decay(method_class, args.weight_decay)
+    #     param_groups = param_groups_model + param_groups_method_class
+    #     # param_groups = param_groups_method_class
+    #     # print(param_groups_method_class)
+    #     # print(param_groups)
+    #     # exit(0)
+    # else:
+    #     param_groups = optim_factory.add_weight_decay(model_without_ddp, args.weight_decay)
+
+    # optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
+    # loss_scaler = NativeScaler()
+
+    optimizer_method_class = None
+    if method_class is not None:
         param_groups_model = optim_factory.add_weight_decay(model_without_ddp, args.weight_decay)
         param_groups_method_class = optim_factory.add_weight_decay(method_class, args.weight_decay)
-        param_groups = param_groups_model + param_groups_method_class
-        # param_groups = param_groups_method_class
-        # print(param_groups_method_class)
-        # print(param_groups)
-        # exit(0)
+
+        optimizer = torch.optim.AdamW(param_groups_model, lr=args.lr, betas=(0.9, 0.95))
+        optimizer_method_class = torch.optim.AdamW(param_groups_method_class, lr=args.lr, betas=(0.9, 0.95))
     else:
         param_groups = optim_factory.add_weight_decay(model_without_ddp, args.weight_decay)
+        optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
 
-    optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
     loss_scaler = NativeScaler()
-
-    # # 打印优化器中每个参数的名称和形状（包括 method_class）
-    # for group in optimizer.param_groups:
-    #     for param in group['params']:
-    #         found = False
-    #         # 检查 model 的参数
-    #         for name, model_param in model.named_parameters():
-    #             if param is model_param:
-    #                 print(f"Parameter name: {name}, shape: {param.shape}")
-    #                 found = True
-    #                 break
-    #         # 检查 method_class 的参数
-    #         if not found and method_class is not None:
-    #             for name, method_param in method_class.named_parameters():
-    #                 if param is method_param:
-    #                     print(f"Parameter name: method_class.{name}, shape: {param.shape}")
-    #                     found = True
-    #                     break
-    #         # 如果没有找到名称
-    #         if not found:
-    #             print(f"Unnamed parameter, shape: {param.shape}")
-    # exit(0)
 
     misc.load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
     
     if args.is_bootstrapping:
-        # assert args.epochs % args.bootstrap_steps == 0, "Total epochs should be divisible by bootstrap steps."
         epochs_per_bootstrap = args.epochs // args.bootstrap_steps
         remaining_epochs = args.epochs % args.bootstrap_steps
         print(f"Start training Bootstrapped MAE for {args.epochs} epochs in total, {epochs_per_bootstrap} epochs per bootstrap step")
@@ -296,19 +286,10 @@ def main(args):
                 current_bootstrap_step_epochs = epochs_per_bootstrap
             print(f"Training for {current_bootstrap_step_epochs} epochs in this bootstrap step")
 
-            # TODO: 调整每个bootstrap step的学习率（EMA）。后话，调整学习率部分
-            # # Update target model for bootstrapping
-            # if bootstrap_iter > 0:
-            #     model.load_state_dict({'module.' + k: v for k, v in ema_model.state_dict().items()}, strict=False)
-            #     model.target_model = ema_model
-            #     for param_group in optimizer.param_groups:
-            #         param_group['lr'] = args.lr * (args.ema_lr_decay ** bootstrap_iter)
-
             # Train for epochs_per_bootstrap epochs
             for epoch in range(current_bootstrap_step_epochs):
                 if args.distributed:
                     data_loader_train.sampler.set_epoch(epoch)
-                # print((last_model==None))
                 train_stats = train_one_epoch(
                     model, data_loader_train,
                     optimizer, device, epoch, loss_scaler,
@@ -316,6 +297,7 @@ def main(args):
                     args=args,
                     last_model=last_model,
                     method_class=method_class,
+                    optimizer_method_class=optimizer_method_class,
                 )
                 if args.use_ema:
                     ema_model.update()
@@ -368,31 +350,21 @@ def main(args):
             # Update target model for bootstrapping
             if args.use_ema:
                 ema_model.apply_shadow()
-
-                # # 验证 ema_model 和 model 的参数值是否一致
-                # print("Checking parameter values for ema_model and model:")
-                # for (name, param), (ema_name, ema_param) in zip(model.named_parameters(), ema_model.model.named_parameters()):
-                #     # 确保参数名称一致
-                #     assert name == ema_name, f"Parameter name mismatch: {name} != {ema_name}"
-                    
-                #     # 比较参数值是否一致
-                #     # print(param.data, ema_param.data)
-                #     if not torch.equal(param.data, ema_param.data):
-                #         print(f"Parameter '{name}' differs between model and ema_model!")
-                #     else:
-                #         print(f"Parameter '{name}' is identical between model and ema_model.")
-
                 last_model = copy.deepcopy(ema_model.model)
                 ema_model.restore()
             else:
                 last_model = copy.deepcopy(model)
 
-            # last_model = None
-            if args.bootstrap_method == 'Cross_layer_fusion':
-                print(method_class.fc.weight[0][0].item())
-                print(method_class.fc.bias[0].item())
-            elif args.bootstrap_method == 'Adaptive_layer_fusion':
-                print(method_class.weights)   # 查看参数值是否会变化
+            # freeze last_model
+            for param in last_model.parameters():
+                param.requires_grad = False
+
+            # # last_model = None
+            # if args.bootstrap_method == 'Cross_layer_fusion':
+            #     print(method_class.fc.weight[0][0].item())
+            #     print(method_class.fc.bias[0].item())
+            # elif args.bootstrap_method == 'Adaptive_layer_fusion':
+            #     print(method_class.weights)   # 查看参数值是否会变化
 
             total_time = time.time() - start_time
             total_time_str = str(datetime.timedelta(seconds=int(total_time)))

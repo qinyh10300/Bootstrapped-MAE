@@ -6,6 +6,7 @@ class GatedFusionDynamic(nn.Module):
     def __init__(self, seq_len, layer_num):
         super(GatedFusionDynamic, self).__init__()
         
+        assert layer_num > 1, "layer_num must be greater than 1 in GatedFusionDynamic"
         self.layer_num = layer_num
         self.fc_gate = nn.ModuleList([nn.Linear(seq_len, 1) for _ in range(layer_num)])  # 门控生成每个序列的权重
         self.fc_output = nn.Linear(seq_len, seq_len)

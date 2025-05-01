@@ -24,7 +24,9 @@ def train_one_epoch(model: torch.nn.Module,
                     log_writer=None,
                     args=None,
                     last_model=None,
-                    method_class=None,):
+                    method_class=None,
+                    optimizer_method_class=None,
+                    ):
     model.train(True)
     metric_logger = misc.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', misc.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -34,6 +36,7 @@ def train_one_epoch(model: torch.nn.Module,
     accum_iter = args.accum_iter
 
     optimizer.zero_grad()
+    optimizer_method_class.zero_grad()
 
     if log_writer is not None:
         print('log_dir: {}'.format(log_writer.log_dir))
@@ -43,6 +46,7 @@ def train_one_epoch(model: torch.nn.Module,
         # we use a per iteration (instead of per epoch) lr scheduler
         if data_iter_step % accum_iter == 0:
             lr_sched.adjust_learning_rate(optimizer, data_iter_step / len(data_loader) + epoch, args)
+            lr_sched.adjust_learning_rate(optimizer_method_class, data_iter_step / len(data_loader) + epoch, args)
 
         samples = samples.to(device, non_blocking=True)
 
@@ -56,31 +60,27 @@ def train_one_epoch(model: torch.nn.Module,
             sys.exit(1)
 
         loss /= accum_iter
+        
+        # 更新 method_class 的参数
+        if method_class is not None and last_model is not None:
+            loss_scaler(loss, optimizer, parameters=list(model.parameters()),
+                        update_grad=(data_iter_step + 1) % accum_iter == 0)
+            optimizer_method_class.step()
 
-        if method_class is not None:
-            # print("modify parameters of method_class")
-            all_parameters = list(model.parameters()) + list(method_class.parameters())
-            # all_parameters = list(method_class.parameters())
-            # print(all_parameters)
-            # print(len(all_parameters), len(list(model.parameters())))
-            # exit(0)
-            if last_model is not None:
-                loss_scaler(loss, optimizer, parameters=all_parameters,
-                            update_grad=(data_iter_step + 1) % accum_iter == 0)
+            # print("Gradients of method_class parameters:")
+            # for name, param in method_class.named_parameters():
+            #     # print(param.requires_grad)
+            #     if param.grad is not None:
+            #         print(f"{name}: {param.grad}")
+            #     else:
+            #         print(f"{name}: No gradient")
+
         else:
             loss_scaler(loss, optimizer, parameters=list(model.parameters()),
                         update_grad=(data_iter_step + 1) % accum_iter == 0)
-            
-        # method_class参数值没有梯度，但是model的参数值有梯度
-        print("Gradients of method_class parameters:")
-        for name, param in method_class.named_parameters():
-            # print(param.requires_grad)
-            if param.grad is not None:
-                print(f"{name}: {param.grad}")
-            else:
-                print(f"{name}: No gradient")
                 
         if (data_iter_step + 1) % accum_iter == 0:
+            optimizer_method_class.zero_grad()
             optimizer.zero_grad()
 
         torch.cuda.synchronize()

@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 class CrossLayerCrossAttention(nn.Module):
     def __init__(self, layer_dim, layer_num, embed_dim, num_heads=3):
+        assert layer_num > 1, "layer_num must be greater than 1 in CrossLayerCrossAttention"
         self.layer_num = layer_num
         super(CrossLayerCrossAttention, self).__init__()
         self.attn_layers = nn.ModuleList([nn.MultiheadAttention(embed_dim, num_heads) for _ in range(layer_num)])

@@ -322,19 +322,18 @@ class MaskedAutoencoderViT(nn.Module):
         # print(self.is_bootstrapping, (last_model==None))
         if self.is_bootstrapping and last_model is not None:
             # print("Bootstrapping")
-            with torch.no_grad():
-                target, _, _ = last_model.forward_encoder(imgs, mask_ratio=0.0, bootstrapping=True, method_class=method_class)
-                
-                if self.is_distill_token:
-                    target = nn.functional.normalize(target[:, 1:-1, :], dim=-1)
-                else:
-                    target = nn.functional.normalize(target[:, 1:, :], dim=-1)
+            target, _, _ = last_model.forward_encoder(imgs, mask_ratio=0.0, bootstrapping=True, method_class=method_class)
+            if self.is_distill_token:
+                target = nn.functional.normalize(target[:, 1:-1, :], dim=-1)
+            else:
+                target = nn.functional.normalize(target[:, 1:, :], dim=-1)
 
             pred, _, _ = last_model.forward_encoder(self.unpatchify(pred), mask_ratio=0.0, bootstrapping=True, method_class=method_class)
             if self.is_distill_token:
                 pred = nn.functional.normalize(pred[:, 1:-1, :], dim=-1)
             else:
                 pred = nn.functional.normalize(pred[:, 1:, :], dim=-1)
+                
             # print(pred.shape, target.shape)
             loss = (pred - target) ** 2
             loss = loss.mean(dim=-1)  # [N, L], mean loss per patch
