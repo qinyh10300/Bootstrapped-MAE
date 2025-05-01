@@ -27,7 +27,7 @@ def run_training(optim):
         "--optim", str(optim),
         "--current_datetime", str(current_datetime),
         "--name", str(name),
-        "--device", "cuda:0",
+        "--device", "cuda:1",
         "--use_ema",
         "--save_frequency", "200",
         "--bootstrap_steps", "200",

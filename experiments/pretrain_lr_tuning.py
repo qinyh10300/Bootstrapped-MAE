@@ -31,7 +31,7 @@ def run_training(accum, warmup_epochs, base_lr):
         "--blr", str(base_lr), 
         "--current_datetime", str(current_datetime),
         "--name", str(name),
-        "--device", "cuda:0",
+        "--device", "cuda:3",
         "--use_ema",
         "--save_frequency", "200"
     ]

@@ -26,7 +26,7 @@ def run_training(norm_pix_loss):
         "bash", "bash_scripts/Bmae_train.sh",
         "--current_datetime", str(current_datetime),
         "--name", str(name),
-        "--device", "cuda:0",
+        "--device", "cuda:1",
         # "--use_ema",
         "--save_frequency", "200",
         "--bootstrap_steps", "5",
