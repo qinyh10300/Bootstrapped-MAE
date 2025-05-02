@@ -1,4 +1,3 @@
-dataset/cifar10_dataset/
 ckpts/
 logs/
 __pycache__/
