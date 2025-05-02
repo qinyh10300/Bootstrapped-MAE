@@ -5,9 +5,9 @@ from datetime import datetime
 
 # Define the hyperparameters to explore
 CKPTS = [
-        "ckpts/Bmae_deit_pretrain_pretrain_ema_decay_0.999/2025-04-30_11-34-13/Bmae-ema-5-39.pth",
-        "ckpts/Bmae_deit_pretrain_pretrain_ema_decay_0.99/2025-04-30_13-07-23/Bmae-ema-5-39.pth",
-        "ckpts/Bmae_deit_pretrain_pretrain_ema_decay_0.9/2025-04-30_14-39-30/Bmae-ema-5-39.pth",
+        "ckpts/Bmae_deit_pretrain_pretrain_ema_decay_0.9/2025-05-02_17-20-11/Bmae-EMA-200-0.pth",
+        "ckpts/Bmae_deit_pretrain_pretrain_ema_decay_0.99/2025-05-02_15-42-23/Bmae-ema-200-0.pth",
+        "ckpts/Bmae_deit_pretrain_pretrain_ema_decay_0.999/2025-05-02_14-03-35/Bmae-ema-200-0.pth",
         ]
 
 # Output log file
