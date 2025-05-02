@@ -5,24 +5,14 @@ from datetime import datetime
 
 # Define the hyperparameters to explore
 CKPTS = [
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_1_use_ema_False/2025-04-30_01-04-55/Bmae-1-199.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_1_use_ema_True/2025-04-29_23-48-56/Bmae-ema-1-199.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_2_use_ema_False/2025-04-30_03-48-26/Bmae-2-99.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_2_use_ema_True/2025-04-30_02-19-41/Bmae-ema-2-99.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_3_use_ema_False/2025-04-30_06-49-46/Bmae-3-65.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_3_use_ema_True/2025-04-30_05-16-33/Bmae-ema-3-65.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_4_use_ema_False/2025-04-30_01-29-18/Bmae-4-49.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_4_use_ema_True/2025-04-29_23-49-28/Bmae-ema-4-49.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_5_use_ema_False/2025-04-30_04-30-49/Bmae-5-39.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_5_use_ema_True/2025-04-30_02-59-18/Bmae-ema-5-39.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_6_use_ema_False/2025-04-30_07-34-05/Bmae-6-32.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_6_use_ema_True/2025-04-30_06-02-02/Bmae-ema-6-32.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_7_use_ema_False/2025-04-30_01-29-02/Bmae-7-27.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_7_use_ema_True/2025-04-29_23-49-56/Bmae-ema-7-27.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_8_use_ema_False/2025-04-30_04-46-36/Bmae-8-24.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_8_use_ema_True/2025-04-30_03-07-37/Bmae-ema-8-24.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_9_use_ema_False/2025-04-30_08-04-23/Bmae-9-21.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_9_use_ema_True/2025-04-30_06-25-18/Bmae-ema-9-21.pth",
+        "ckpts/Bmae_deit_pretrain_bootstrap_steps_1_use_ema_False/2025-05-02_00-22-32/Bmae-1-199.pth",
+        "ckpts/Bmae_deit_pretrain_bootstrap_steps_1_use_ema_True/2025-05-01_23-10-49/Bmae-ema-1-199.pth",
+        "ckpts/Bmae_deit_pretrain_bootstrap_steps_5_use_ema_False/2025-05-02_03-07-33/Bmae-5-39.pth",
+        "ckpts/Bmae_deit_pretrain_bootstrap_steps_5_use_ema_True/2025-05-02_01-33-55/Bmae-ema-5-39.pth",
+        "ckpts/Bmae_deit_pretrain_bootstrap_steps_10_use_ema_False/2025-05-02_06-17-41/Bmae-10-19.pth",
+        "ckpts/Bmae_deit_pretrain_bootstrap_steps_10_use_ema_True/2025-05-02_04-41-10/Bmae-ema-10-19.pth",
+        "ckpts/Bmae_deit_pretrain_bootstrap_steps_100_use_ema_False/2025-05-02_09-32-13/Bmae-100-1.pth",
+        "ckpts/Bmae_deit_pretrain_bootstrap_steps_100_use_ema_True/2025-05-02_07-53-50/Bmae-ema-100-1.pth",
         ]
 
 # Output log file

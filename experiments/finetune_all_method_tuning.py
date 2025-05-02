@@ -5,18 +5,16 @@ from datetime import datetime
 
 # Define the hyperparameters to explore
 CKPTS = [
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_1_use_ema_False/2025-05-02_00-22-32/Bmae-1-199.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_1_use_ema_True/2025-05-01_23-10-49/Bmae-ema-1-199.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_5_use_ema_False/2025-05-02_03-07-33/Bmae-5-39.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_5_use_ema_True/2025-05-02_01-33-55/Bmae-ema-5-39.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_10_use_ema_False/2025-05-02_06-17-41/Bmae-10-19.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_10_use_ema_True/2025-05-02_04-41-10/Bmae-ema-10-19.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_100_use_ema_False/2025-05-02_09-32-13/Bmae-100-1.pth",
-        "ckpts/Bmae_deit_pretrain_bootstrap_steps_100_use_ema_True/2025-05-02_07-53-50/Bmae-ema-100-1.pth",
+        "ckpts/Bmae_deit_pretrain_pretrain_method_Adaptive_layer_fusion/2025-05-02_00-52-28/Bmae-ema-200-0.pth",
+        "ckpts/Bmae_deit_pretrain_pretrain_method_Cross_layer_cross_attention/2025-05-02_07-45-10/Bmae-ema-200-0.pth",
+        "ckpts/Bmae_deit_pretrain_pretrain_method_Cross_layer_fusion/2025-05-02_02-33-52/Bmae-ema-200-0.pth",
+        "ckpts/Bmae_deit_pretrain_pretrain_method_Cross_layer_self_attention/2025-05-02_05-58-03/Bmae-ema-200-0.pth",
+        "ckpts/Bmae_deit_pretrain_pretrain_method_Fixed_layer_fusion/2025-05-01_23-11-53/Bmae-ema-200-0.pth",
+        "ckpts/Bmae_deit_pretrain_pretrain_method_Gated_fusion_dynamic/2025-05-02_04-15-56/Bmae-ema-200-0.pth",
         ]
 
 # Output log file
-log_file = "./experiments/hyperparam_results/bootstrap_steps_finetune.log"
+log_file = "./experiments/hyperparam_results/method_finetune.log"
 
 # # Make sure to clear the log file before starting
 # if os.path.exists(log_file):
@@ -60,7 +58,7 @@ def run_training(ckpt):
     # Define the output directory based on the hyperparameters
     current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # 获取当前时间并格式化为字符串
     print("current_datetime:", current_datetime)
-    ckpt_name = "bootstrap_steps_" + ckpt.split('/')[1].split('_bootstrap_steps_')[1].split('/')[0]
+    ckpt_name = "method_" + ckpt.split('/')[1].split('_method_')[1].split('/')[0]
     name = f"Bmae_deit_finetune_{ckpt_name}"
     output_dir = f"./ckpts/{name}/{current_datetime}"
     
@@ -105,8 +103,8 @@ def run_training(ckpt):
 with open(log_file, "a") as log:
     log_current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # 获取当前时间并格式化为字符串
     log.write(f"\n\n*****************************************************************\n")
-    log.write(f"Start logging finetune bs_steps tuning, at {log_current_datetime}\n")
-    print(f"Start logging finetune bs_steps tuning, at {log_current_datetime}")
+    log.write(f"Start logging finetune method tuning, at {log_current_datetime}\n")
+    print(f"Start logging finetune method tuning, at {log_current_datetime}")
 
     for ckpt in CKPTS:
         print(f"Running training with CKPT={ckpt}")
@@ -121,6 +119,6 @@ with open(log_file, "a") as log:
             log.write(f"ERROR: CKPT={ckpt}, STATUS=FAILED\n")
             print(f"Error with: CKPT={ckpt}. Marking as FAILED.")
 
-    log.write(f"Finish logging finetune bs_step tuning, at {log_current_datetime}\n")
+    log.write(f"Finish logging finetune method tuning, at {log_current_datetime}\n")
     log.write(f"*****************************************************************\n\n")
-    print(f"Finish logging finetune bs_step tuning, at {log_current_datetime}")
+    print(f"Finish logging finetune method tuning, at {log_current_datetime}")
