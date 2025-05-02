@@ -2,7 +2,7 @@
 
 # 定义要按顺序运行的 Python 脚本列表
 scripts=(
-    "experiments/pretrain_accum_tuning.py"
+    # "experiments/pretrain_accum_tuning.py"
     "experiments/pretrain_half_life_tuning.py"
 )
 

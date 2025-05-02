@@ -2,9 +2,7 @@
 
 # 定义要按顺序运行的 Python 脚本列表
 scripts=(
-    "experiments/finetune_all_norm_tuning.py"
-    "experiments/finetune_all_optim_tuning.py"
-    "experiments/finetune_all_method_tuning.py"
+    "experiments/finetune_all_bs_step_tuning.py"
 )
 
 # 按顺序运行列表中的 Python 脚本

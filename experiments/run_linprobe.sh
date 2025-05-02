@@ -2,9 +2,8 @@
 
 # 定义要按顺序运行的 Python 脚本列表
 scripts=(
-    "experiments/linprobe_all_norm_tuning.py"
-    "experiments/linprobe_all_optim_tuning.py"
-    "experiments/linprobe_all_method_tuning.py"
+    "experiments/linprobe_all_bs_step_tuning.py"
+    "experiments/linprobe_all_lr_tuning.py"
 )
 
 # 按顺序运行列表中的 Python 脚本

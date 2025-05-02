@@ -2,8 +2,6 @@
 
 # 定义要按顺序运行的 Python 脚本列表
 scripts=(
-    "experiments/pretrain_lr_tuning.py"
-    "experiments/pretrain_warming_tuning.py"
     "experiments/pretrain_accum_tuning.py"
 )
 

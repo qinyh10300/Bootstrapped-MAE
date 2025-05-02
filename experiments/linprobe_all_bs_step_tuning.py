@@ -13,6 +13,8 @@ CKPTS = [
         "ckpts/Bmae_deit_pretrain_bootstrap_steps_10_use_ema_True/2025-05-02_04-41-10/Bmae-ema-10-19.pth",
         "ckpts/Bmae_deit_pretrain_bootstrap_steps_100_use_ema_False/2025-05-02_09-32-13/Bmae-100-1.pth",
         "ckpts/Bmae_deit_pretrain_bootstrap_steps_100_use_ema_True/2025-05-02_07-53-50/Bmae-ema-100-1.pth",
+        "ckpts/Bmae_deit_pretrain_bootstrap_steps_200_use_ema_False/2025-05-02_12-48-02/Bmae-200-0.pth",
+        "ckpts/Bmae_deit_pretrain_bootstrap_steps_200_use_ema_True/2025-05-02_11-10-02/Bmae-ema-200-0.pth",
         ]
 
 # Output log file
@@ -72,7 +74,7 @@ def run_training(ckpt):
         "--finetune", str(ckpt),
         "--current_datetime", str(current_datetime),
         "--name", str(name),
-        "--device", "cuda:2",
+        "--device", "cuda:1",
         "--save_frequency", "200"  # 相当于不save checkpoint
     ]
     
