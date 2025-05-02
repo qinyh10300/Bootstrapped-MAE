@@ -4,7 +4,8 @@ import os
 from datetime import datetime
 
 # Define the hyperparameters to explore
-ACCUM_VALUES = [1, 2, 4]
+# ACCUM_VALUES = [1, 2, 4]
+ACCUM_VALUES = [4]
 WARMUP_EPOCHS_VALUES = [10]
 BASE_LR_VALUES = [5e-4]
 
